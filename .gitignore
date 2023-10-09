@@ -1,0 +1,9 @@
+*.db
+*.json
+*.sqlite
+*.Rhistory
+*.RData
+*.dta
+*.sas
+*.sav
+*.rds
