@@ -1,4 +1,4 @@
-# Estudo de Caso - Projeto BigDataNaPratica (Machine Learning)
+# Estudo de Caso - Projeto BigDataNaPratica (Machine Learning) - Contexto
 
 # Configurando o diretório de trabalho
 setwd("C:/Users/Julia/Desktop/CienciaDeDados/1.Big-Data-Analytics-com-R-e-Microsoft-Azure-Machine-Learning/11-Projeto-BigDataNaPratica-Machine_Learning_em_Marketing_Digital-Prevendo_N_Usuarios_Convertidos")
