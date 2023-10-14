@@ -59,11 +59,12 @@ corrplot(cor_matrix,
 # E a correlação próxima de 1 indica forte correlação posiiva (aumenta o valor de uma variável e aumenta o valor de outra variável)
 # Próximo de 0 indica que não há correlação
 
+
 # Durante a preparação do projeto, nós temos que definir nossa variável alvo ou variável de estudo
 # Olhando para as variáveis decidimos que nossa variável alvo é "usuarios_convertidos" pois é exatamente esta que queremos prever.
 # Ou seja, o precisamos exatamente é prever o número de usuarios convertidos.
 # As demais serão candidatas a variáveis pretidoras (não é obrigatório usar todas), ou seja, precisamos encontrar um modelo que use as
-# outras 3 variáveis para prever usuarios convertidos
+# outras 3 variáveis ou 1 delas para prever usuarios convertidos
 
 # Caso o problema de negócio fosse prever o numero de cliques ao invés de usuarios_convertidos teria que ser outro projeto pois
 # Machine Learning é algo específico para resolver um problema pontual. Nosso raciocínio será apenas para prever números de usuários
@@ -126,7 +127,7 @@ ggplot(dados, aes(x = numero_cliques, y = usuarios_convertidos)) +
 #### Versão 1 do Modelo (Regressão Linear Múltipla) ####
 
 # Usaremos Regressão Linear Múltipla (é usada quando temos diversas variáveis preditoras)
-# Usamos Regressão porque queremos prever uma variável numérica, caso a variável fosse categórica usamos Classificação Linear Múltipla
+# Usamos Regressão porque queremos prever uma variável numérica, caso a variável fosse categórica usaríamos Classificação Linear Múltipla
 
 modelo_v1 <- lm(data = dados, usuarios_convertidos ~ valor_gasto_campanha + numero_visualizacoes + numero_cliques)
 modelo_v1
@@ -199,7 +200,7 @@ summary(modelo_v1)
 
 ## Interpretação Final
 
-# - O modelo parece fazer um bom trabalho na previsão de "usuários convertidos" (R-squared alto), mas apenas a
+# - O modelo parece fazer um bom trabalho na previsão de "usuários convertidos" (R-squared alto), constatamos que apenas a
 #   variável "número de cliques" é estatisticamente significativa na previsão. Isso pode implicar que "número de cliques" é a
 #   principal variável que você deve se concentrar para entender as conversões de usuários.
 
@@ -212,24 +213,116 @@ summary(modelo_v1)
 #   anteriormente ao criar o gráfico de correlação, os dados originais tem problema de multicolienaridade (correlção forte entre
 #   variáveis preditoras) e por conta disso o modelo terá muitos problemas ao ser alimentado com novos dados.
 
+# - E por conta disso este não é o modelo ideal.
+
 # - Existem várias abordagens para lidar com a multicolinearidade: Remover Variáveis Redundantes. Transformar Variáveis, 
 #   Regularização ou Coleta mais dados.
 
-# - No nosso caso, criaremos uma segunda versão do modelo olhando somente para a variável "numero_cliques" junto com a nossa
-#   variável alvo, afinal o problema de multicolinearidade está nas variáveis preditoras.
+# - No nosso caso, criaremos uma segunda versão do modelo olhando somente para a variável preditora "numero_cliques" junto com a 
+#   nossa variável alvo ("usuarios_convertidos), afinal o problema de multicolinearidade está entre as variáveis preditoras.
 
 # - E como no nosso relatório anterior apontou que a única variável relevante é "numero_cliques" isso é mais um indicativo para
 #   criar esta nova versão. Iremos então criar um Modelo De Regressão Linear Simples.
 
 
 
+
+
+
 #### Versão 2 do Modelo (Regressão Linear Simples) ####
 
+modelo_v2 <- lm(data = dados, usuarios_convertidos ~ numero_cliques)
+modelo_v2
 
+summary(modelo_v2)
 
 
 
 ### Interpretando os valores originais
+
+# Residuals:
+#      Min       1Q    Median       3Q      Max 
+# -21.7207  -4.1067   -0.1993   4.2421  20.3177 
+
+# Coefficients:
+#                Estimate Std. Error  t value Pr(>|t|)    
+# (Intercept)    -2.99028    1.00606   -2.972   0.0031 **
+# numero_cliques  0.81490    0.01482   54.973   <2e-16 ***
+#  ---
+#  Signif. codes:  
+#  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Residual standard error: 6.93 on 498 degrees of freedom
+# Multiple R-squared:  0.8585,	Adjusted R-squared:  0.8582 
+# F-statistic: 3022 on 1 and 498 DF,  p-value: < 2.2e-16
+
+
+# - Começamos olhando para o valor p da nossa variável preditora (numero_cliques) e constatamos que por conta do valor
+#   muito abaixo, podemos dizer que a variável é estatisticamente significativa para explicar a variável alvo.
+
+# - Olhamos também para os valores de Multiple R-squared e Adjusted R-squared e constamtos também que possuem um valor próximo
+#   a 1 , que indica que o modelo 2 possui praticamente a mesma perfomance do modelo 1. E como explicar isso, afinal tiramos 2
+#   variáveis ? A resposta é por conta da multicolinearidade entre as variáveis.
+
+
+
+
+
+
+# -> E agora ? Tudo indica que o trabalho terminou. Mas podemos ainda melhorar.
+
+# - Nós inicamos a criação de um modelo com 4 variáveis, aplicamos a versão 1 do modelo para detectarmos qual variável preditora era
+#   estatisticamente significa e detectamos 1 variável significativa. Antes havíamos detectado que tínhamos problema de 
+#   multicolinearidade e decidimos resolver criando uma versão 2 do modelo deixando apenas 2 variáveis (Regressão Linear Simples)
+
+# - E apesar do modelo 2 ter uma boa performance , nós só temos 1 variável preditora e isso signifca que tudo se resume a prever 
+#   usuários convertidos olhando apenas para numero de cliques.
+
+# - Então basicamente o que temos até aqui é "tomador de decisão, basta olhar para o numero de cliques para prever quantos usuarios
+#   são convertidos".
+
+# - E com isso temos um modelo simples demais, aonde resumimos demais a questão dizendo que iremos prever numero de usuarios com base
+#   no numero de cliques.
+
+
+# -> E assim como a versão 2 está muito simples pois da mesma forma que ter muitas variáveis preditoras é um problema, ter poucas
+#    também é um prolema.
+
+# -> Vamos então resolver o problema da multicolinearidade e utilizar mais variáveis para o nosso modelo.
+
+# -> A abordagem de incluir mais variáveis pode ajudar a capturar nuances e fatores adicionais que influenciam o número de usuários
+#    convertidos, tornando o modelo mais completo. 
+
+
+
+
+
+
+#### Versão 3 do Modelo (Aplicando Engenharia de Atributos Antes da Regressão Linear Múltipla) ####
+
+
+
+
+
+
+# arquivo original
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -308,13 +401,54 @@ summary(modelo_v1)
 
 
 
+
 ### Interpretando os meus valores (versão 2 - Modelo Regressão Linear Simples):
 
+# Residuals:
+#     Min      1Q  Median      3Q     Max 
+# -48.902  -8.225   1.117   9.104  31.768 
+
+# Coefficients:
+#                Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)    26.51385    2.21393   11.98   <2e-16 ***
+# numero_cliques  0.33392    0.03326   10.04   <2e-16 ***
+#  ---
+#  Signif. codes:  
+#  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Residual standard error: 12.9 on 498 degrees of freedom
+# Multiple R-squared:  0.1683,	Adjusted R-squared:  0.1666 
+# F-statistic: 100.8 on 1 and 498 DF,  p-value: < 2.2e-16
+
+
+# Residuals: Os resíduos representam as diferenças entre os valores observados e os valores previstos pelo modelo. Eles variam de
+# -48.902 a 31.768, com quartis em -8.225, 1.117, 9.104. A distribuição dos resíduos parece não ser perfeitamente simétrica, 
+#  mas é aceitável.
+
+# Coefficients: O coeficiente da interceptação (Intercept) é 26.51385, e o coeficiente para "numero_cliques" é 0.33392. 
+# Ambos os coeficientes têm valores-p muito baixos, indicando que eles são estatisticamente significativos. O Intercept representa
+# o valor da variável dependente (usuários convertidos) quando o número de cliques é zero, que é 26.51385. O coeficiente para
+# "numero_cliques" (0.33392) sugere que, para cada aumento unitário no número de cliques, espera-se um aumento de aproximadamente
+# 0.33392 no número de usuários convertidos.
+
+# Residual standard error: O erro padrão residual é 12.9, que é uma medida da qualidade do modelo. Quanto menor esse valor, melhor 
+# o modelo se ajusta aos dados.
+
+# Multiple R-squared e Adjusted R-squared: O Multiple R-squared é 0.1683, e o Adjusted R-squared é 0.1666. Isso indica que o modelo 
+# tem uma capacidade limitada de explicar a variância na variável dependente, dado que possui apenas uma variável preditora.
+# A maior parte da variabilidade na variável dependente não é explicada por este modelo.
+
+# F-statistic e p-value: O valor do F-statistic é 100.8, e o valor-p associado é muito baixo, indicando que o modelo é 
+# estatisticamente significativo como um todo, apesar de sua capacidade limitada de explicar a variância.
+
+# Em resumo, este modelo de regressão linear simples com "numero_cliques" como preditor mostra que essa variável é estatisticamente 
+# significativa para prever o número de usuários convertidos. No entanto, o modelo ainda não é capaz de explicar uma grande parte 
+# da variabilidade na variável dependente, indicando que outros fatores não incluídos no modelo podem desempenhar um papel importante
+# na previsão dos usuários convertidos.
 
 
 
-
-
+### Interpretando os meus valores (Versão 3 do Modelo (Aplicando Engenharia de Atributos Antes da Regressão Linear Múltipla):
 
 
 
