@@ -221,8 +221,8 @@ summary(modelo_v1)
 # - No nosso caso, criaremos uma segunda versão do modelo olhando somente para a variável preditora "numero_cliques" junto com a 
 #   nossa variável alvo ("usuarios_convertidos), afinal o problema de multicolinearidade está entre as variáveis preditoras.
 
-# - E como no nosso relatório anterior apontou que a única variável relevante é "numero_cliques" isso é mais um indicativo para
-#   criar esta nova versão. Iremos então criar um Modelo De Regressão Linear Simples.
+# - E como o relatório da versão 1 do modelo apontou que a única variável relevante é "numero_cliques" isso é mais um indicativo para
+#   criar esta nova versão. Iremos então criar a versão 2 do modelo usando Regressão Linear Simples.
 
 
 
@@ -235,8 +235,6 @@ modelo_v2 <- lm(data = dados, usuarios_convertidos ~ numero_cliques)
 modelo_v2
 
 summary(modelo_v2)
-
-
 
 ### Interpretando os valores originais
 
@@ -261,21 +259,26 @@ summary(modelo_v2)
 #   muito abaixo, podemos dizer que a variável é estatisticamente significativa para explicar a variável alvo.
 
 # - Olhamos também para os valores de Multiple R-squared e Adjusted R-squared e constamtos também que possuem um valor próximo
-#   a 1 , que indica que o modelo 2 possui praticamente a mesma perfomance do modelo 1. E como explicar isso, afinal tiramos 2
-#   variáveis ? A resposta é por conta da multicolinearidade entre as variáveis.
+#   a 1 , que indica que o modelo 2 possui praticamente a mesma perfomance do modelo 1.
+# - E como explicar isso, afinal tiramos 2 variáveis ?
+#   A resposta é por que retiramos as variáveis preditoras que não eram usadas e resolvemos o problema da multicolinearidade 
+#   entre as variáveis.
 
 
 
 
 
 
-# -> E agora ? Tudo indica que o trabalho terminou. Mas podemos ainda melhorar.
+# -> E agora ? Tudo indica que o trabalho terminou. Mas podemos melhorar...
 
-# - Nós inicamos a criação de um modelo com 4 variáveis, aplicamos a versão 1 do modelo para detectarmos qual variável preditora era
-#   estatisticamente significa e detectamos 1 variável significativa. Antes havíamos detectado que tínhamos problema de 
-#   multicolinearidade e decidimos resolver criando uma versão 2 do modelo deixando apenas 2 variáveis (Regressão Linear Simples)
+# - Nós inicamos a criação da versão 1 do modelo com 4 variáveis, aplicamos o modelo para detectarmos qual variável preditora era
+#   estatisticamente significativa na previsão da variável alvo "usuários_convertidos" e detectamos que 1 das 4 variáveis era uma
+#   variável significativa ("numero_cliques"). Porém, antes da criação da versão 1, ao calcular uma matrix de correlação havíamos
+#   detectado que tínhamos problema demulticolinearidade e para resolver este problema decidimos criar uma versão 2 do modelo
+#   deixando apenas 2 variáveis (variável alvo "usuarios_convertidos" e variáve preditora significativa "numero_cliques") e 
+#   utilizar a técnica de Regressão Linear Simples.
 
-# - E apesar do modelo 2 ter uma boa performance , nós só temos 1 variável preditora e isso signifca que tudo se resume a prever 
+# - E apesar do modelo 2 ter uma boa performance, nós só temos 1 variável preditora e isso signifca que tudo se resume a prever 
 #   usuários convertidos olhando apenas para numero de cliques.
 
 # - Então basicamente o que temos até aqui é "tomador de decisão, basta olhar para o numero de cliques para prever quantos usuarios
@@ -285,10 +288,10 @@ summary(modelo_v2)
 #   no numero de cliques.
 
 
-# -> E assim como a versão 2 está muito simples pois da mesma forma que ter muitas variáveis preditoras é um problema, ter poucas
-#    também é um prolema.
+# -> E assim constatamosm que a versão 2 está muito simples pois da mesma forma que ter muitas variáveis preditoras é um problema,
+#    ter poucas também é um prolema.
 
-# -> Vamos então resolver o problema da multicolinearidade e utilizar mais variáveis para o nosso modelo.
+# -> Vamos então abordar o problema da multicolinearidade de uma outra forma e utilizar mais variáveis para o nosso modelo.
 
 # -> A abordagem de incluir mais variáveis pode ajudar a capturar nuances e fatores adicionais que influenciam o número de usuários
 #    convertidos, tornando o modelo mais completo. 
@@ -300,42 +303,166 @@ summary(modelo_v2)
 
 #### Versão 3 do Modelo (Aplicando Engenharia de Atributos Antes da Regressão Linear Múltipla) ####
 
+# - Até aqui nossa primeira decisão foi criar a versão 1 do modelo (Regressão Linear Múltipla) sem fazer qualquer tipo de 
+#   modificação nos dados. Com isso verificamos que a performance era boa (R-squared) e detectamos 1 variável significativa
+#   ("numero_cliques") para com a nossa variável alvo ("usuarios_convertidos").
+
+# - Porém como já havíamos detectado anteriormente o problema de multicolinearidade, decidimos criar uma versão 2 do modelo 
+#   utilizando Regressão Linear Simples. E o que aconteceu foi que apesar do modelo também ter boa performance, ele ficou
+#   simples demais. E assim tomamos mais uma decisão que é criar uma versão 3 do modelo resolvendo o problema da multicolinearidade e
+#   utilizar mais variáveis preditoras.
+
+
+# - Para resolver nosso problema de multicolinearidade aplicaremos a técnica Engenharia de Atributos, ou seja, iremos olhar para
+#   nossas variáveis, faremos alguma transformação e/ou criar uma nova variável.
+
+# - Como a multicolinearidade é quando temos uma correlação muilto alto entre duas variáveis preditoras e isso indica que elas 
+#   representam a mesma informação, nós podemos juntar a informação destas duas variáveis e criar uma terceira variável.
+
+
+# Criando a nova variável taxa_de_clique (criamos esta variável pois para a pessoa chegar no clique ela passa pela visualização)
+head(dados)
+
+dados$taxa_de_clique <- dados$numero_cliques / dados$numero_visualizacoes
+
+
+# Veriricar se algum valor ficou igual a zero (sempre verificar quando realizar divisão de valores)
+any(dados$taxa_de_clique == 0)
+
+
+# Calculando uma nova matriz de correlação
+cor_matrix <- cor(dados)
+cor_matrix
+
+# Corrplot
+corrplot(cor_matrix,
+         method = "color",
+         type = "upper",
+         addCoef.col = 'springgreen2',
+         tl.col = "black",
+         tl.srt = 45)
+
+# -> Criar a variável taxa_de_clique significa que não precisamos mais utilizar as variáveis "numero_visualizacoes" e "numero_cliques".
+#    A informação destas duas variáveis agora está na variável "taxa_de_clique".
+
+# -> Agora interpretando a correlação da variável "taxa_de_clique" com a outra variável preditora "valor_gasto_campanha", detectamos
+#    que a correlação entre essas duas variáveis agora é 0.06 (original), o que é um bom número.
+
+# -> Olhamos também para a correlação entre a variável "taxa_de_clique" com a nossa variável alvo "usuarios_convertidos e detectamos
+#    que o valor é 0.4 (dados originais). Não é um valor tão alto, mas também não está tão próximo de zero, o que é razoável.
+
+
+
+# Calculando versão 3 do modelo
+
+modelo_v3 <- lm(data = dados, usuarios_convertidos ~ valor_gasto_campanha + taxa_de_clique)
+modelo_v3
+
+summary(modelo_v3)
+
+### Interpretando os valores originais
+
+# Residuals:
+#      Min       1Q    Median       3Q     Max 
+# -23.8286  -4.5071   -0.1693   4.2813  20.744 
+
+# Coefficients:
+#                        Estimate   Std. Error  t value  Pr(>|t|)
+# (Intercept)           -4.785e+01   2.601e+00   -18.39  <2e-16 ***
+# valor_gasto_campanha  5.105e-02    1.102e-03    46,34  <2e-16 ***
+# taxa_de_clique        3.613e+03    1.868e+02    19.34  <2e-16 ***
+
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Residual standard error: 7.336 on 497 degrees of freedom
+# Multiple R-squared:  0.8418,	Adjusted R-squared:  0.8412 
+# F-statistic: 1322 on 2 and 497 DF,  p-value: < 2.2e-16
+
+
+# - O modelo explica aproximadamente 84,18% da variação em usuarios_convertidos, o que é bom.
+
+# - O coeficiente para "valor_gasto_campanha" é 0,05105, isso significa que mantendo todas as outras variáveis constantes
+#   o aumento de uma unidade em "valor_gasto_campanha" resultará em um aumento de 0,05105 unidades na nossa variável alvo
+#   "usuarios_convertidos".
+# - O coeficiente para taxa_de_clique é 3613, isso significa que mantendo todas as outras variáveis constantes
+#   o aumento de uma unidade em "taxa_de_clique" resultará em um aumento de 3613 unidades na nossa variável alvo
+#   "usuarios_convertidos".
+
+# -> "5.105e-02": Isso significa 5.105 multiplicado por 10 elevado à potência de -02. O expoente negativo indica que você move a
+#     vírgula decimal duas posições para a esquerda. Portanto, "5.105e-02" é igual a 0,05105.
+# -> "3.613e+03": Isso significa 3.613 multiplicado por 10 elevado à potência de 3. O expoente positivo indica que você move a
+#    vírgula decimal três posições para a direita. Portanto, "3.613e+03" é igual a 3613.
+
+# - Todos as variáveis preditoras são significativos, com valores-p muito baixos
+#   (ou seja, estão marcadas como "***" e valor p abaixo de 0.05)
+
+# - O modelo é estatisticamente significativo, conforme indicado pelo valor-p próximo a zero para a estatística F (F-statistic)
+
+# - Lembre-se de que essas são interpretações puramente estatísticas. 
+#   A validade prática desses resultados deve ser avaliada no contexto do problema de negócio que você está tentando resolver.
+
+
+### Vamos checar as suposições do modelo de regressão:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 
 # arquivo original
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+dados_originais <- as.data.frame(read_csv("dataset_cliques.csv"))
 
 
 
@@ -448,8 +575,24 @@ summary(modelo_v2)
 
 
 
+
 ### Interpretando os meus valores (Versão 3 do Modelo (Aplicando Engenharia de Atributos Antes da Regressão Linear Múltipla):
 
+#Residuals:
+#   Min      1Q  Median      3Q     Max 
+#-51.594  -7.962   0.570   8.655  33.968 
+
+# Coefficients:
+#                       Estimate Std. Error t value Pr(>|t|)
+# (Intercept)          2.956e+01  4.256e+00   6.946 1.18e-11
+# valor_gasto_campanha 2.622e-03  4.122e-03   0.636    0.525
+# taxa_de_clique       1.081e+03  1.218e+02   8.873  < 2e-16
+
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Residual standard error: 13.15 on 497 degrees of freedom
+# Multiple R-squared:  0.138,	Adjusted R-squared:  0.1345 
+# F-statistic: 39.78 on 2 and 497 DF,  p-value: < 2.2e-16
 
 
 
@@ -463,6 +606,17 @@ summary(modelo_v2)
 
 
 
+
+
+
+
+
+
+
+
+
+
+### script para criação dos dados
 
 set.seed(200)
 # Definir o tamanho do conjunto de dados
@@ -501,7 +655,6 @@ sum(dados$usuarios_convertidos >= dados$numero_cliques)
 
 # Verificar se os limites de valores estão satisfeitos
 summary(dados)
-
 View(dados)
 
 # Salva o dataset em formato CSV
@@ -511,6 +664,38 @@ View(dados)
 
 
 
+# Componentes do Sumário
 
+# Residuals:
+# Esta seção mostra um resumo estatístico dos resíduos (diferença entre os valores observados e os 
+# valores previstos pelo modelo).
 
+# Min, 1Q, Median, 3Q, Max descrevem a distribuição dos resíduos. 
+# Seu objetivo é que esses valores sejam distribuídos simetricamente em torno de zero. Nesse caso, parece que 
+# a mediana está próxima de zero, o que é um bom sinal.
 
+# Coefficients:
+# Esta seção descreve os coeficientes do modelo de regressão.
+
+# Estimate: A estimativa dos coeficientes. Por exemplo, para cada unidade de aumento no valor_gasto_campanha, 
+# a variável usuarios_convertidos aumenta em média 0.05105 unidades, mantendo a taxa_de_clique constante.
+
+# Std. Error: O erro padrão dos coeficientes, uma medida da variação dos coeficientes.
+
+# t value: A estatística t, usada para testar a hipótese nula de que o coeficiente é igual a zero (sem efeito). 
+# Um valor t alto pode indicar que a variável é significativa.
+
+# Pr(>|t|): O valor-p associado à estatística t. Um valor muito baixo (< 0,05) indica que você pode rejeitar 
+# a hipótese nula. Isso significa que o coeficiente é estatisticamente significativo para prever a variável alvo.
+
+# Todos os coeficientes são altamente significativos (p-valor < 2e-16), indicando que ambos são importantes preditores da variável alvo.
+
+# Outras Estatísticas:
+# Residual standard error: É uma medida da qualidade do ajuste do modelo aos dados. Quanto menor, melhor, 
+# embora deva ser interpretado no contexto do problema.
+
+# Multiple R-squared e Adjusted R-squared: São medidas que indicam a proporção da variação na variável 
+# dependente que é explicada pelo modelo. O seu valor é de 0,8418, o que é relativamente alto e indica um bom ajuste.
+
+# F-statistic e p-value: Estas estatísticas testam a hipótese nula de que todos os coeficientes de regressão 
+# são iguais a zero. Dado o valor extremamente baixo do valor-p, você pode rejeitar essa hipótese.
