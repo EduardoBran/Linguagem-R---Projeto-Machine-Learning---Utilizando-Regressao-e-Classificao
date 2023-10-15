@@ -19,9 +19,9 @@ library(ggplot2)   # criar outros gráficos (especificamente de dispersão)
 
 
 
-# Carrega o dataset (código da criação do dataset ao final)
+# Carrega o dataset original
 
-dados <- as.data.frame(read_csv("dataset_criado.csv"))
+dados <- as.data.frame(read_csv("dataset.csv"))
 head(dados)
 View(dados)
 
@@ -157,7 +157,7 @@ summary(modelo_v1)
 
 # -> Importante sempre notar o valor p "Pr(>|t|)" e verificar se é maior ou menor que 0.05.
 #    Se for maior, NÃO tem relevância com a variável alto, se for menor tem relevância.
-#    As "***" indicam que é uma variável significativa.
+#    As "***" indicam que é uma variável significativa e que tem relevância.
 
 # -> Importante verificar valor do "Multiple R-squared" e "Adjusted R-squared" e esperar que o valor fique próximo a 1.
 #    O valor próximo a 1 indica que o modelo é estatisticamente significativo para explicar a variável alvo.
@@ -175,15 +175,15 @@ summary(modelo_v1)
 #   de zero neste modelo.
 
 # -> valor_gasto_campanha:
-# - O coeficiente é 0.007797, mas o valor-p associado é 0.621, o que indica que essa variável não é estatisticamente significativa
-#   na previsão de usuários convertidos, pelo menos neste modelo.
+# - O coeficiente é 0.007797, mas o valor-p associado é 0.621, o que indica que essa variável não é estatisticamente 
+#   significativa na previsão de usuários convertidos, pelo menos neste modelo.
 
 # -> numero_visualizacoes:
 # - O coeficiente é -0.003505, com um valor-p de 0.265. Isso também sugere que a variável não é significativa.
 
 # ->  numero_cliques:
-# - O coeficiente é 0.943882, com um valor-p extremamente baixo (< 2e-16). Isso indica que essa variável é altamente significativa
-#   na previsão de usuários convertidos.
+# - O coeficiente é 0.943882, com um valor-p extremamente baixo (< 2e-16). Isso indica que essa variável é altamente 
+#   significativa na previsão de usuários convertidos.
 
 # -> Residual standard error:
 # - Este é uma medida da qualidade do modelo. Quanto menor, melhor o modelo. Neste caso, é 6.865.
@@ -213,7 +213,7 @@ summary(modelo_v1)
 #   anteriormente ao criar o gráfico de correlação, os dados originais tem problema de multicolienaridade (correlção forte entre
 #   variáveis preditoras) e por conta disso o modelo terá muitos problemas ao ser alimentado com novos dados.
 
-# - E por conta disso este não é o modelo ideal.
+# - E por conta disso este não seria o modelo ideal.
 
 # - Existem várias abordagens para lidar com a multicolinearidade: Remover Variáveis Redundantes. Transformar Variáveis, 
 #   Regularização ou Coleta mais dados.
@@ -274,7 +274,7 @@ summary(modelo_v2)
 # - Nós inicamos a criação da versão 1 do modelo com 4 variáveis, aplicamos o modelo para detectarmos qual variável preditora era
 #   estatisticamente significativa na previsão da variável alvo "usuários_convertidos" e detectamos que 1 das 4 variáveis era uma
 #   variável significativa ("numero_cliques"). Porém, antes da criação da versão 1, ao calcular uma matrix de correlação havíamos
-#   detectado que tínhamos problema demulticolinearidade e para resolver este problema decidimos criar uma versão 2 do modelo
+#   detectado que tínhamos problema de multicolinearidade e para resolver este problema decidimos criar uma versão 2 do modelo
 #   deixando apenas 2 variáveis (variável alvo "usuarios_convertidos" e variáve preditora significativa "numero_cliques") e 
 #   utilizar a técnica de Regressão Linear Simples.
 
@@ -288,7 +288,7 @@ summary(modelo_v2)
 #   no numero de cliques.
 
 
-# -> E assim constatamosm que a versão 2 está muito simples pois da mesma forma que ter muitas variáveis preditoras é um problema,
+# -> E assim constatamos que a versão 2 está muito simples pois da mesma forma que ter muitas variáveis preditoras é um problema,
 #    ter poucas também é um prolema.
 
 # -> Vamos então abordar o problema da multicolinearidade de uma outra forma e utilizar mais variáveis para o nosso modelo.
@@ -309,8 +309,8 @@ summary(modelo_v2)
 
 # - Porém como já havíamos detectado anteriormente o problema de multicolinearidade, decidimos criar uma versão 2 do modelo 
 #   utilizando Regressão Linear Simples. E o que aconteceu foi que apesar do modelo também ter boa performance, ele ficou
-#   simples demais. E assim tomamos mais uma decisão que é criar uma versão 3 do modelo resolvendo o problema da multicolinearidade e
-#   utilizar mais variáveis preditoras.
+#   simples demais. E assim tomamos mais uma decisão que é criar uma versão 3 do modelo resolvendo o problema da multicolinearidade
+#   e utilizar mais variáveis preditoras.
 
 
 # - Para resolver nosso problema de multicolinearidade aplicaremos a técnica Engenharia de Atributos, ou seja, iremos olhar para
@@ -402,31 +402,69 @@ summary(modelo_v3)
 #   A validade prática desses resultados deve ser avaliada no contexto do problema de negócio que você está tentando resolver.
 
 
-### Vamos checar as suposições do modelo de regressão:
 
 
 
 
+### Vamos checar as suposições do modelo de regressão (todo e qualquer modelo de Machine Learning possuem suposições)
 
+# Obter os resíduos do modelo de regressão linear (diferenças entre os valores observados e os valores previstos pelo modelo)
+# Os resíduos são essenciais para a avaliação das suposições do modelo
+residuals <- resid(modelo_v3)
+residuals
 
 
+# Gráfico de Resíduos vs Valores Ajustados (gráfico para ajudar a verificar a suposição de homocedasticidade. )
 
+# - Gráfico que relaciona os resíduos com os valores ajustados pelo modelo. O eixo x representa os valores ajustados 
+#   (previstos pelo modelo), enquanto o eixo y representa os resíduos.
+# - O gráfico ajuda a verificar a suposição de homocedasticidade. Homocedasticidade significa que a variabilidade dos resíduos é
+#   constante em todos os níveis dos valores ajustados. Em outras palavras, os erros não devem mostrar nenhum padrão claro em
+#   relação aos valores previstos. O que se espera ver é uma nuvem de pontos que se espalha aleatoriamente ao redor de zero, sem
+#   formar padrões em forma de funil ou cone.
+# - A linha suave no gráfico é uma representação visual que ajuda a identificar tendências ou padrões nos dados. Neste caso, está
+#   sendo usado o método 'loess' para ajustar a linha suave.
 
+ggplot(dados, aes(x = predict(modelo_v3), y = residuals)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = 'loess') +
+  ggtitle("Resíduos vs Valores Ajustados") +
+  xlab("Valores Ajustados") +
+  ylab("Resíduos")
 
 
+# Gráfico Histograma dos Resíduos (gráfico para ajudar a verificar a normalidade dos resíduos)
 
+# - Um histograma em forma de sino indica que os resíduos estão normalmente distribuídos, indicando que temos um 
+#   bom modelo de regressão.
 
+ggplot(dados, aes(x = residuals)) +
+  geom_histogram(binwidth = 1, fill = 'blue', alpha = 0.7) +
+  ggtitle("Histograma dos Resíduos") +
+  xlab("Resíduos")
 
 
+# Gráfico QQ-plot (este gráfico também ajuda a verificar a normalidade dos resíduos)
 
+# - Pontos alinhados em torno da linha diagonal sugerem que os resíduos são normalmente distribuídos, indicando 
+#   que temos um bom modelo de regressão.
 
+ggplot(dados, aes(sample = residuals)) +
+  geom_qq() +
+  geom_qq_line() +
+  ggtitle("QQ-Plot dos Resíduos") +
+  xlab("Quantis Teóricos") +
+  ylab("Quantis Amostrais")
 
 
+# - Como nós anteriormente resolvemos o problema da multicolinearidade, aplicamos engenharia de atributos, isso levou aos
+#   nossos três gráficos mostrarem que nosso modelo (v3) segue as suposições para a regressão, ou seja, é um modelo equilibrado.
 
 
 
 
 
+### Deploy do Modelo
 
 
 
@@ -461,210 +499,12 @@ summary(modelo_v3)
 
 
 
-# arquivo original
-dados_originais <- as.data.frame(read_csv("dataset_cliques.csv"))
 
 
 
-### Interpretando os meus valores (versão 1 - Modelo Regressão Linear Múltilpla):
 
-# Residuals:
-#   Min      1Q  Median      3Q     Max 
-# -49.426  -8.046   1.413   9.207  31.425 
 
-# Coefficients:
-
-#                       Estimate   Std. Error  t value   Pr(>|t|)    
-# (Intercept)          29.6623155   5.4949585    5.398   1.05e-07 ***
-# valor_gasto_campanha  0.0005439   0.0040756    0.133      0.894    
-# numero_visualizacoes -0.0007781   0.0008069   -0.964      0.335    
-# numero_cliques        0.3312877   0.0335229    9.882     <2e-16 ***
-
-# Residual standard error: 12.92 on 496 degrees of freedom
-
-# Multiple R-squared:  0.1699,	Adjusted R-squared:  0.1648 
-
-# F-statistic: 33.83 on 3 and 496 DF,  p-value: < 2.2e-16
-
-
-# -> Residuals:
-# - Os resíduos representam as diferenças entre os valores observados e os valores previstos pelo modelo. Neste modelo,
-#   os resíduos variam de -49.426 a 31.425, com quartis em -8.046, 1.413, 9.207. Isso sugere que os resíduos não estão distribuídos
-#   de maneira perfeitamente simétrica em torno de zero, indicando que o modelo pode não ser tão preciso quanto o modelo anterior.
-
-
-# -> Coefficients:
-# - O coeficiente do intercepto (Intercept) é 29.6623155, com um valor-p extremamente baixo (1.05e-07), o que indica que o
-#   intercepto é significativamente diferente de zero.
-
-# - O coeficiente de "valor_gasto_campanha" é 0.0005439, com um valor-p de 0.894, o que indica que esta variável não é 
-#    estatisticamente significativa na previsão de "usuarios_convertidos" neste modelo.
-
-# - O coeficiente de "numero_visualizacoes" é -0.0007781, com um valor-p de 0.335, indicando que esta variável também não é 
-#   estatisticamente significativa.
-
-# - O coeficiente de "numero_cliques" é 0.3312877, com um valor-p muito baixo (< 2e-16), sugerindo que esta variável é altamente 
-#   significativa na previsão de "usuarios_convertidos".
-
-# -> Residual standard error:
-# - O erro padrão residual é 12.92, que é maior em comparação com o modelo anterior. Isso indica que este
-#   modelo tem um erro médio maior na previsão.
-
-# -> Multiple R-squared e Adjusted R-squared:
-# - O R-quadrado múltiplo é 0.1699, e o R-quadrado ajustado é 0.1648. Isso indica que o
-#   modelo atual explica apenas cerca de 16,99% da variância na variável de destino "usuarios_convertidos". Portanto, este modelo
-#   tem um poder de explicação muito menor do que o modelo anterior.
-
-# -> F-statistic e p-value:
-# - O teste F mostra se o modelo como um todo é significativo. Neste caso, o valor F é 33.83, e o valor-p
-#   associado é extremamente baixo (< 2.2e-16), indicando que o modelo é estatisticamente significativo.
-
-## Interpretação Final
-
-#  -> Em resumo, este novo modelo (modelo_v1) possui uma capacidade de explicação muito menor (R-quadrado mais baixo) e menor
-#     precisão (erro padrão residual mais alto) em comparação com o modelo anterior. Além disso, as variáveis "valor_gasto_campanha"
-#     e "numero_visualizacoes" não são estatisticamente significativas na previsão de "usuarios_convertidos", enquanto 
-#     "numero_cliques" é a única variável altamente significativa.
-
-
-
-
-### Interpretando os meus valores (versão 2 - Modelo Regressão Linear Simples):
-
-# Residuals:
-#     Min      1Q  Median      3Q     Max 
-# -48.902  -8.225   1.117   9.104  31.768 
-
-# Coefficients:
-#                Estimate Std. Error t value Pr(>|t|)    
-# (Intercept)    26.51385    2.21393   11.98   <2e-16 ***
-# numero_cliques  0.33392    0.03326   10.04   <2e-16 ***
-#  ---
-#  Signif. codes:  
-#  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-# Residual standard error: 12.9 on 498 degrees of freedom
-# Multiple R-squared:  0.1683,	Adjusted R-squared:  0.1666 
-# F-statistic: 100.8 on 1 and 498 DF,  p-value: < 2.2e-16
-
-
-# Residuals: Os resíduos representam as diferenças entre os valores observados e os valores previstos pelo modelo. Eles variam de
-# -48.902 a 31.768, com quartis em -8.225, 1.117, 9.104. A distribuição dos resíduos parece não ser perfeitamente simétrica, 
-#  mas é aceitável.
-
-# Coefficients: O coeficiente da interceptação (Intercept) é 26.51385, e o coeficiente para "numero_cliques" é 0.33392. 
-# Ambos os coeficientes têm valores-p muito baixos, indicando que eles são estatisticamente significativos. O Intercept representa
-# o valor da variável dependente (usuários convertidos) quando o número de cliques é zero, que é 26.51385. O coeficiente para
-# "numero_cliques" (0.33392) sugere que, para cada aumento unitário no número de cliques, espera-se um aumento de aproximadamente
-# 0.33392 no número de usuários convertidos.
-
-# Residual standard error: O erro padrão residual é 12.9, que é uma medida da qualidade do modelo. Quanto menor esse valor, melhor 
-# o modelo se ajusta aos dados.
-
-# Multiple R-squared e Adjusted R-squared: O Multiple R-squared é 0.1683, e o Adjusted R-squared é 0.1666. Isso indica que o modelo 
-# tem uma capacidade limitada de explicar a variância na variável dependente, dado que possui apenas uma variável preditora.
-# A maior parte da variabilidade na variável dependente não é explicada por este modelo.
-
-# F-statistic e p-value: O valor do F-statistic é 100.8, e o valor-p associado é muito baixo, indicando que o modelo é 
-# estatisticamente significativo como um todo, apesar de sua capacidade limitada de explicar a variância.
-
-# Em resumo, este modelo de regressão linear simples com "numero_cliques" como preditor mostra que essa variável é estatisticamente 
-# significativa para prever o número de usuários convertidos. No entanto, o modelo ainda não é capaz de explicar uma grande parte 
-# da variabilidade na variável dependente, indicando que outros fatores não incluídos no modelo podem desempenhar um papel importante
-# na previsão dos usuários convertidos.
-
-
-
-
-### Interpretando os meus valores (Versão 3 do Modelo (Aplicando Engenharia de Atributos Antes da Regressão Linear Múltipla):
-
-#Residuals:
-#   Min      1Q  Median      3Q     Max 
-#-51.594  -7.962   0.570   8.655  33.968 
-
-# Coefficients:
-#                       Estimate Std. Error t value Pr(>|t|)
-# (Intercept)          2.956e+01  4.256e+00   6.946 1.18e-11
-# valor_gasto_campanha 2.622e-03  4.122e-03   0.636    0.525
-# taxa_de_clique       1.081e+03  1.218e+02   8.873  < 2e-16
-
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-# Residual standard error: 13.15 on 497 degrees of freedom
-# Multiple R-squared:  0.138,	Adjusted R-squared:  0.1345 
-# F-statistic: 39.78 on 2 and 497 DF,  p-value: < 2.2e-16
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### script para criação dos dados
-
-set.seed(200)
-# Definir o tamanho do conjunto de dados
-n <- 500
-
-# Criar o conjunto de dados
-dados <- data.frame(
-  valor_gasto_campanha = as.integer(rnorm(n, mean = 1000, sd = 200)),
-  numero_visualizacoes = as.integer(rnorm(n, mean = 5000, sd = 1000)),
-  numero_cliques = as.integer(rnorm(n, mean = 60, sd = 10)),
-  usuarios_convertidos = integer(n)
-)
-
-# Garantir que usuarios_convertidos seja sempre menor que numero_cliques
-for (i in 1:n) {
-  usuarios_convertidos <- abs(round(rnorm(1, mean = 30, sd = 10)))
-  while (usuarios_convertidos >= dados$numero_cliques[i]) {
-    usuarios_convertidos <- abs(round(rnorm(1, mean = 30, sd = 10)))
-  }
-  dados$usuarios_convertidos[i] <- usuarios_convertidos
-}
-
-# Rescale os valores para atender aos limites especificados
-dados$valor_gasto_campanha <- round((dados$valor_gasto_campanha - min(dados$valor_gasto_campanha)) / (max(dados$valor_gasto_campanha) - min(dados$valor_gasto_campanha)) * (1495 - 505) + 505)
-dados$numero_visualizacoes <- round((dados$numero_visualizacoes - min(dados$numero_visualizacoes)) / (max(dados$numero_visualizacoes) - min(dados$numero_visualizacoes)) * (7528 - 2376) + 2376)
-dados$numero_cliques <- round((dados$numero_cliques - min(dados$numero_cliques)) / (max(dados$numero_cliques) - min(dados$numero_cliques)) * (116 - 9) + 9)
-dados$usuarios_convertidos <- round((dados$usuarios_convertidos - min(dados$usuarios_convertidos)) / (max(dados$usuarios_convertidos) - min(dados$usuarios_convertidos)) * (101 - 4) + 4)
-
-
-# Corrigir "usuarios_convertidos" quando for maior ou igual a "numero_cliques"
-dados$usuarios_convertidos[dados$usuarios_convertidos >= dados$numero_cliques] <- dados$numero_cliques[dados$usuarios_convertidos >= dados$numero_cliques] - 1
-
-# Verificar se a restrição está satisfeita (deve retornar 0)
-sum(dados$usuarios_convertidos >= dados$numero_cliques)
-
-
-# Verificar se os limites de valores estão satisfeitos
-summary(dados)
-View(dados)
-
-# Salva o dataset em formato CSV
-# write.csv(dados, file = "dataset_criado.csv", row.names = FALSE)
-
-
-
-
-
-# Componentes do Sumário
+## Explicando Componentes do Sumário
 
 # Residuals:
 # Esta seção mostra um resumo estatístico dos resíduos (diferença entre os valores observados e os 
