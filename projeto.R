@@ -221,8 +221,8 @@ summary(modelo_v1)
 # - No nosso caso, criaremos uma segunda versão do modelo olhando somente para a variável preditora "numero_cliques" junto com a 
 #   nossa variável alvo ("usuarios_convertidos), afinal o problema de multicolinearidade está entre as variáveis preditoras.
 
-# - E como o relatório da versão 1 do modelo apontou que a única variável relevante é "numero_cliques" isso é mais um indicativo para
-#   criar esta nova versão. Iremos então criar a versão 2 do modelo usando Regressão Linear Simples.
+# - E como o relatório da versão 1 do modelo apontou que a única variável relevante é "numero_cliques" isso é mais um indicativo
+#   para criar esta nova versão. Iremos então criar a versão 2 do modelo usando Regressão Linear Simples.
 
 
 
@@ -328,7 +328,7 @@ dados$taxa_de_clique <- dados$numero_cliques / dados$numero_visualizacoes
 
 # Veriricar se algum valor ficou igual a zero (sempre verificar quando realizar divisão de valores)
 any(dados$taxa_de_clique == 0)
-
+head(dados)
 
 # Calculando uma nova matriz de correlação
 cor_matrix <- cor(dados)
@@ -342,7 +342,7 @@ corrplot(cor_matrix,
          tl.col = "black",
          tl.srt = 45)
 
-# -> Criar a variável taxa_de_clique significa que não precisamos mais utilizar as variáveis "numero_visualizacoes" e "numero_cliques".
+# -> Criar a variável taxa_de_clique significa que não precisaremos utilizar as variáveis "numero_visualizacoes" e "numero_cliques".
 #    A informação destas duas variáveis agora está na variável "taxa_de_clique".
 
 # -> Agora interpretando a correlação da variável "taxa_de_clique" com a outra variável preditora "valor_gasto_campanha", detectamos
@@ -420,7 +420,8 @@ residuals
 #   (previstos pelo modelo), enquanto o eixo y representa os resíduos.
 # - O gráfico ajuda a verificar a suposição de homocedasticidade. Homocedasticidade significa que a variabilidade dos resíduos é
 #   constante em todos os níveis dos valores ajustados. Em outras palavras, os erros não devem mostrar nenhum padrão claro em
-#   relação aos valores previstos. O que se espera ver é uma nuvem de pontos que se espalha aleatoriamente ao redor de zero, sem
+#   relação aos valores previstos.
+# - O que se espera ver é uma nuvem de pontos que se espalha aleatoriamente ao redor de zero, sem
 #   formar padrões em forma de funil ou cone.
 # - A linha suave no gráfico é uma representação visual que ajuda a identificar tendências ou padrões nos dados. Neste caso, está
 #   sendo usado o método 'loess' para ajustar a linha suave.
@@ -457,7 +458,7 @@ ggplot(dados, aes(sample = residuals)) +
   ylab("Quantis Amostrais")
 
 
-# - Como nós anteriormente resolvemos o problema da multicolinearidade, aplicamos engenharia de atributos, isso levou aos
+# - Como nós anteriormente resolvemos o problema da multicolinearidade e aplicamos engenharia de atributos, isso levou aos
 #   nossos três gráficos mostrarem que nosso modelo (v3) segue as suposições para a regressão, ou seja, é um modelo equilibrado.
 
 
@@ -466,33 +467,82 @@ ggplot(dados, aes(sample = residuals)) +
 
 ### Deploy do Modelo
 
+# - Até aqui começamos com a definição do problema de negócio, buscamos os dados, buscamos compreender as variáveis,
+#   se necessário aplicaríamos limpeza e processamento (que não foi necessário neste Lab).
+# - Nós então trabalhamos na modelagem, criamos a 1ª e a 2ª versão do modelo.
+# - Aplicamos engenharia de atributos para resolver o problema de multicolinearidade e então criamos a 3ª e
+#   definitiva versão do modelo.
+
+# - Porém o trabalho do Cientista de Dados "só" termina ao criar o arquivo em disco.
 
 
 
+# Salva o modelo treinado em disco
+save(modelo_v3, file = "modelo_v3.RData")
+
+
+# Carrega o modelo do disco
+load("modelo_v3.RData")
+
+
+## Contexto
+
+# - A equipe de marketing digital da empresa lançará um novo produto e nesta campanha ele esperam gastar 1350 reais e acreditam
+#   que isso ira gerar 7300 visualizações na página do produto e acreditam também que terão 100 número de cliques no botão de
+#   compra/cadastro/etc,
+
+# - Com base nos dados acima, quantos usuários vão comprar o produto?
+#   Através desta respota poderemos saber se a empresa está investindo corretamente o dinheiro ou se a previsão está certa ou não.
+
+
+# Criar ("recebendo") novos dados para previsão
+novos_dados <- data.frame(valor_gasto_campanha = c(1350), 
+                          numero_visualizacoes = c(7300),
+                          numero_cliques = c(100))
+
+
+# - Provavelmente a área de negócio sequer sabe que fizemos engenharia de atributos (a dica é conversar com todos antes) e criamos
+#   uma variável nova, por conta disso os dado podem vir conforme acima.
+# - E como além de não usarmos 2 destas 3 variáveis para criar o modelo v3, e ainda criamos a variável nova (taxa_de_clique)
+#   teremos que fazer as transformações necessárias.
+
+# - Muito Importante -> Com isso podemos afirmar que toda e qualquer transformação aplicada aos dados de treino devem ser 
+#   aplicadas aos dados de teste e a novos dados.
+
+
+# Cria a nova variável conforme foi feito para treinar o modelo
+novos_dados$taxa_de_clique <- novos_dados$numero_cliques / novos_dados$numero_visualizacoes 
+
+# Remove as variáveis que não serão usadas
+novos_dados$numero_visualizacoes <- NULL
+novos_dados$numero_cliques <- NULL
+
+head(novos_dados)
+
+
+# Fazer previsões
+
+previsoes <- predict(modelo_v3, newdata = novos_dados)
+
+
+# Criando função para exibir as previsões (se tiver mais de 1 previsão é adiciona uma vírgula entre os valores)
+formatar_saida <- function(previsoes) {
+  if (length(previsoes) == 1) {
+    return(as.integer(previsoes))
+  } else {
+    return(paste(as.integer(previsoes), collapse = ", "))
+  }
+}
+
+# Exibir as previsões formatadas
+cat("Esperamos este número de usuários convertidos: ", formatar_saida(previsoes))
 
 
 
+## Conclusão
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# - Se a empresa gastar na próxima campanha e conseguir 7500 visualizações na página e conseguir 100 cliques, é muito provável
+#   que ela consiga 70 novos clientes.
 
 
 
