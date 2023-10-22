@@ -13,6 +13,7 @@ library(tidyverse) # manipulação de dados
 library(dplyr)     # manipulação de dados
 library(corrplot)  # criar gráfico de mapa de correlação
 library(ggplot2)   # criar outros gráficos (especificamente de dispersão)
+library(caret)     # usado em tarefas de classificação e regressão para simplificar o processo de treinamento de modelos
 
 
 
@@ -43,7 +44,18 @@ dados <- as.data.frame(read_csv("dataset_classificacao.csv"))
 head(dados)
 View(dados)
 
+# - Observando os dados, podemos constatar que cada linha é um lead (possível usuário) com seus dados pessoais e com a 
+#   informação se comprou ou não (variável "converteu").
+
+# - Como podemos perceber, temos uma variável chamada "cor_da_pele" e isso implica em uma questão moral:
+#   "podemos prever se o usuário vai ou não comprar o produto considerando a pele do usuário?". Não podemos.
+# - Para este modelo e para não criarmos um modelo discriminatório, foi decidido com base na lei geral de proteção
+#   dados que não iremos utilizar esta variável e iremos remove-la.
+
+# - E quanto a questão da variável faixa etária? Podemos utilizar?
+#   Se ao invés de faixa etária, tivéssemos a idade exata poderíamos também criar um modelo discriminatório, porém
+#   não é o caso. (a dica é que quando se tem a variável com idade exata, convertar a variável idade para faixa_etaria)
+
 
 ## Análise Exploratória dos Dados
-
 
