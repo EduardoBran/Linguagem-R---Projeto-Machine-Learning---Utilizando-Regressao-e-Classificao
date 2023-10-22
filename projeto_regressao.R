@@ -10,6 +10,8 @@ getwd()
 
 # -> Utilizando Regressão Linear Múltipla
 
+# -> Pergunta de Negócio: Qual o número provável de usuários convertidos?
+
 
 # Carregando pacotes
 
