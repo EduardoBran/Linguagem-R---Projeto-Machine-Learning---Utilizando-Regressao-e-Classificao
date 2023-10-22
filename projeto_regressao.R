@@ -8,6 +8,7 @@ getwd()
 
 ##########       Projeto Machine Learning em Marketing Digital - Prevendo Número de Usuários Convertidos       ########## 
 
+# -> Utilizando Regressão Linear Múltipla
 
 
 # Carregando pacotes
@@ -21,7 +22,7 @@ library(ggplot2)   # criar outros gráficos (especificamente de dispersão)
 
 # Carrega o dataset original
 
-dados <- as.data.frame(read_csv("dataset.csv"))
+dados <- as.data.frame(read_csv("dataset_regressao.csv"))
 head(dados)
 View(dados)
 
