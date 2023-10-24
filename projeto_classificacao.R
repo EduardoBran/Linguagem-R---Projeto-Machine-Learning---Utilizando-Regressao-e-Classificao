@@ -206,7 +206,31 @@ str(treino)
 str(teste)
 
 
+# -> Uma das formas de aplciar o encoding é utilizar a funcao as.factor()
+#    Em python nao existe as.factor e vai ficar apenas o "0 ou 1". No R ele mantém o "texto".
 
+
+# Aplicando label encoding na variável alvo (converteu)
+treino$converteu <- as.factor(treino$converteu)
+teste$converteu <- as.factor(teste$converteu)
+
+View(treino)
+str(treino)
+str(teste)
+
+
+# Aplicando label encoding nas demais variáveis categóricas
+treino$faixa_etaria <- as.factor(treino$faixa_etaria)
+treino$cidade <- as.factor(treino$cidade)
+treino$navegador_web <- as.factor(treino$navegador_web)
+
+teste$faixa_etaria <- as.factor(teste$faixa_etaria)
+teste$cidade <- as.factor(teste$cidade)
+teste$navegador_web <- as.factor(teste$navegador_web)
+
+View(treino)
+str(treino)
+str(teste)
 
 
 
