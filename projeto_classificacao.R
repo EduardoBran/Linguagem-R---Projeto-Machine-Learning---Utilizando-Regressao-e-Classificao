@@ -22,6 +22,7 @@ library(caret)     # usado em tarefas de classificação e regressão para simpl
 
 # -> Utilizando Classificação Linear Múltipla
 
+
 # -> Pergunta de Negócio: Um lead será convertido? Sim ou não? Qual a probabilidade?
 #    (diferente do projeto regressão, agora não queremos mais saber quantos usuários serão convertidos, queremos apenas
 #     saber se vai ser convertido, sim ou não e a probabilidade)
@@ -57,5 +58,73 @@ View(dados)
 #   não é o caso. (a dica é que quando se tem a variável com idade exata, convertar a variável idade para faixa_etaria)
 
 
+
 ## Análise Exploratória dos Dados
+
+
+# Tipos dos dados
+str(dados)
+
+# Sumário (variáveis numéricas)
+summary(dados)
+
+
+## Gráficos (para analisar como os dados estão organizados)
+
+
+# Gráfico de barras
+
+# - Exibe a distribuição da variável alvo "converte" (diz a qtd de sim e a qtd de não)
+# - Podemos constatar que o "SIM" tem uma quantidade maior que o "NÃO", porém como podemos ver no grafico, a diferença não é
+#   tão grande. Se a diferença fosse muito alto, teríamos que aplicar uma técnica de 'balanceamento de classe' antes de treinar
+#   o modelo.
+
+ggplot(dados, aes(x = converteu)) +
+  geom_bar(aes(fill = converteu), alpha = 0.7) +
+  geom_text(stat = 'count', aes(label = after_stat(count), vjust = -0.5)) +  # exibe o valor da qtd
+  ggtitle("Distribuição da Variável 'Converteu'") +
+  xlab("Converteu") +
+  ylab("Quantidade")
+
+
+# - Exibe a distribuição da variável "faixa_etaria" (diz a qtd de cada faixa etária)
+
+ggplot(dados, aes(x = faixa_etaria)) +
+  geom_bar(fill = "orangered3", alpha = 0.7) +
+  geom_text(stat = 'count', aes(label = after_stat(count), vjust = -0.5)) +  # exibe o valor da qtd
+  ggtitle("Distribuição de Faixa Etária") +
+  xlab("Faixa Etária") +
+  ylab("Quantidade")
+
+
+
+# Boxplot
+
+# - Olhando para caixa da classe do SIM podemos obsrevar uma grande quantidade de valores (numero_cliques) dentro da caixa,
+#   o que indica que provavelmente temos uma relação de numero_cliques e se converteu ou não.
+# - Olhando para caixa da classe NÃO, podemos constatar que a mediana (linha no meio) é muito menor do que a mediana da caixa 
+#   do SIM, o que indica claramente que o numero_cliques tem uma relação direta com o fato do usuária converter ou não.
+# - Pontos fora da caixa do NÃO indicam valores outliers.
+
+ggplot(dados, aes(x = converteu, y = numero_cliques, fill = converteu)) +
+  geom_boxplot() +
+  ggtitle("Boxplot - Número de Cliques por Conversão") +
+  xlab("Converteu") +
+  ylab("Número de Cliques")
+
+
+# Gráfico de Dispersão
+
+
+
+
+
+
+
+
+
+
+
+
+
 
