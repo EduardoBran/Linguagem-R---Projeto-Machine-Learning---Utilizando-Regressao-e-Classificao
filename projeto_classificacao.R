@@ -115,8 +115,42 @@ ggplot(dados, aes(x = converteu, y = numero_cliques, fill = converteu)) +
 
 # Gráfico de Dispersão
 
+# - Gráfico que mostra a relação entre duas variáveis numéricas (quantitativas)
+# - Acrescentamos também mais informações ao gráfico como o acréscimo dos dados da variável converteu
+# - E também foi adicionado a linha azul de confiança juntamente com intervalo de confiança (método usado lm)
+# - Observando o gráfico podemos ver que quando aumenta o numero_acessos, aumenta o numero_cliques
+
+ggplot(dados, aes(x = numero_acessos, y = numero_cliques)) +
+  geom_point(aes(color = converteu), alpha = 0.6) +
+  geom_smooth(method = 'lm') +
+  ggtitle("Relação entre Número de Acessos e Número de Cliques") +
+  xlab("Número de Acessos") +
+  ylab("Número de Cliques")
 
 
+
+## Sumarizar dados para obter a média do número de acessos por cidade
+
+dados_sumarizados <- aggregate(numero_acessos ~ cidade, data = dados, FUN = mean)
+dados_sumarizados
+  
+dados_suma <- 
+  dados %>% 
+  group_by(cidade) %>% 
+  summarize(numero_acessos = mean(numero_acessos))
+dados_suma  
+
+
+# Gráfico de Barras com dados sumarizados
+
+# - Exibe a média do número de acesso por cidade
+
+ggplot(dados_sumarizados, aes(x = reorder(cidade, -numero_acessos), y = numero_acessos)) + # reorder
+  geom_bar(stat = 'identity', aes(fill = cidade), alpha = 0.7) +
+  ggtitle("Gráfico de Barras - Média do Número de Acessos por Cidade") +
+  xlab("Cidade") +
+  ylab("Média do Número de Acessos") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 
