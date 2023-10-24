@@ -20,6 +20,7 @@ library(caret)     # usado em tarefas de classificação e regressão para simpl
 
 ##########       Projeto Machine Learning em Marketing Digital - Prevendo Número de Usuários Convertidos       ########## 
 
+
 # -> Utilizando Classificação Linear Múltipla
 
 
@@ -39,7 +40,7 @@ library(caret)     # usado em tarefas de classificação e regressão para simpl
 #   "com base nessas características, esse lead vai ou não converter e isso vai acontecer com X% de probabilidade".
 
 
-## Carrega o dataset original
+#### Carrega o dataset original ####
 
 dados <- as.data.frame(read_csv("dataset_classificacao.csv"))
 head(dados)
@@ -58,8 +59,12 @@ View(dados)
 #   não é o caso. (a dica é que quando se tem a variável com idade exata, convertar a variável idade para faixa_etaria)
 
 
+# Remove a variável
+dados$cor_da_pele <- NULL
 
-## Análise Exploratória dos Dados
+
+
+#### Análise Exploratória dos Dados ####
 
 
 # Tipos dos dados
@@ -95,7 +100,6 @@ ggplot(dados, aes(x = faixa_etaria)) +
   ggtitle("Distribuição de Faixa Etária") +
   xlab("Faixa Etária") +
   ylab("Quantidade")
-
 
 
 # Boxplot
@@ -141,7 +145,7 @@ dados_suma <-
 dados_suma  
 
 
-# Gráfico de Barras com dados sumarizados
+## Gráfico de Barras com dados sumarizados
 
 # - Exibe a média do número de acesso por cidade
 
@@ -151,6 +155,63 @@ ggplot(dados_sumarizados, aes(x = reorder(cidade, -numero_acessos), y = numero_a
   xlab("Cidade") +
   ylab("Média do Número de Acessos") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+##### Pré-Processamento e Encoding de Variáveis Categóricas #####
+
+# - O que é Encodingo de Variáveis Categóricas
+
+# - Observando nosso dados podemos perceber que temos duas variaveis quantitativas e todas as outras variaveis são categóricas.
+#   E lembrando que Machine Learning é matemática, como fazer matemática com palavras (variáveis categóricas) ?
+
+# - Logo não podemos criar um modelo de Machine Learning com dados do tipo texto, por isso temos que codificar (encoding) estas
+#   variáveis. Teremos que converter nossas variaveis categoricas para sua representação numérica. Ou seja, iremos transformar
+#   o dado sem mudar a informação.
+
+# - Exemplificando: qual o dado variável Cidade da primeira linha? A respota é conforme olhamos nos dados é Curitiba.
+#   Então o que podemos fazer com a variável cidade ? Podemos substituir Curitiba por pelo nº 0, outra cidade pelo nº 1 e seguir
+#   desta forma para os demais nomes de cidades. Com isso mudamos o dado sem perder a informação.
+
+set.seed(42)
+
+?createDataPartition
+
+# - Antes de aplicarmos o encoding precisamos usar a função createDataPartition para poder particionar os dados e dividi-los em
+#   amostras de treino e teste.
+#   Quando aplicamos transformação ou pré processamento, em geral você faz isso com amostras diferentes de treino e teste.
+
+# - O ideal é primeiro dividir em treino e teste e depois aplicar o processo de transformação, processamento e assim por diante.
+#   Não é obrigatório. Em geral divide primeiro e depois aplica.
+
+# - Iremos fazer a divisão com base na variável alvo, por que se não usar a variável alvo como critéria de divisão, poderiamos
+#   colcoar todos os registros de SIM em treino e todos de NAO em teste. E precisamos dividir de maneira aleatória.
+#   Por isso foi usado a variável converteu como critério de separação.
+
+# - p = 0.75 significa que 75% dos dados vão apra amostra de treino e restante para amostra de teste. Sem formato de lista.
+
+# Dividindo os dados em treino e teste
+indices <- createDataPartition(dados$converteu, p = 0.75, list = FALSE)  
+
+treino <- dados[indices, ]
+teste <- dados[-indices, ]
+
+
+# Visualiza os dados e tipos de dados
+View(treino)
+View(teste)
+str(treino)
+str(teste)
+
+
+
+
+
+
+
+
 
 
 

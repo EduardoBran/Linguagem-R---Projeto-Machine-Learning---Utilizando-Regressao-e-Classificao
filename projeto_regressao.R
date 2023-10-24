@@ -8,6 +8,7 @@ getwd()
 
 ##########       Projeto Machine Learning em Marketing Digital - Prevendo Número de Usuários Convertidos       ########## 
 
+
 # -> Utilizando Regressão Linear Múltipla
 
 # -> Pergunta de Negócio: Qual o número provável de usuários convertidos?
@@ -30,7 +31,7 @@ View(dados)
 
 
 
-## Análise Exploratória dos Dados
+#### Análise Exploratória dos Dados ####
 
 
 # Verificando tipos de dados
@@ -124,7 +125,7 @@ ggplot(dados, aes(x = numero_cliques, y = usuarios_convertidos)) +
 
 
 
-##########################                MODELAGEM                ##########################
+#### MODELAGEM ####
 
 
 #### Versão 1 do Modelo (Regressão Linear Múltipla) ####
