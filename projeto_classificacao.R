@@ -164,7 +164,7 @@ ggplot(dados_sumarizados, aes(x = reorder(cidade, -numero_acessos), y = numero_a
 
 # - O que é Encodingo de Variáveis Categóricas
 
-# - Observando nosso dados podemos perceber que temos duas variaveis quantitativas e todas as outras variaveis são categóricas.
+# - Observando nosso dados podemos perceber que temos duas varáaveis quantitativas e todas as outras variáveis são categóricas.
 #   E lembrando que Machine Learning é matemática, como fazer matemática com palavras (variáveis categóricas) ?
 
 # - Logo não podemos criar um modelo de Machine Learning com dados do tipo texto, por isso temos que codificar (encoding) estas
@@ -187,10 +187,10 @@ set.seed(42)
 #   Não é obrigatório. Em geral divide primeiro e depois aplica.
 
 # - Iremos fazer a divisão com base na variável alvo, por que se não usar a variável alvo como critéria de divisão, poderiamos
-#   colcoar todos os registros de SIM em treino e todos de NAO em teste. E precisamos dividir de maneira aleatória.
+#   colocar todos os registros de SIM em treino e todos de NAO em teste. E precisamos dividir de maneira aleatória.
 #   Por isso foi usado a variável converteu como critério de separação.
 
-# - p = 0.75 significa que 75% dos dados vão apra amostra de treino e restante para amostra de teste. Sem formato de lista.
+# - p = 0.75 significa que 75% dos dados vão para a amostra de treino e o restante para amostra de teste. Sem formato de lista.
 
 # Dividindo os dados em treino e teste
 indices <- createDataPartition(dados$converteu, p = 0.75, list = FALSE)  
@@ -206,8 +206,11 @@ str(treino)
 str(teste)
 
 
-# -> Uma das formas de aplciar o encoding é utilizar a funcao as.factor()
+# -> Uma das formas de aplicar o encoding é utilizar a funcao as.factor()
 #    Em python nao existe as.factor e vai ficar apenas o "0 ou 1". No R ele mantém o "texto".
+
+# -> Em alguns algoritimos de Machine Learning não podemos utilizar apenas o as.factor e teremos que fazer a conversão de 
+#    maneira explícita.
 
 
 # Aplicando label encoding na variável alvo (converteu)
@@ -231,6 +234,177 @@ teste$navegador_web <- as.factor(teste$navegador_web)
 View(treino)
 str(treino)
 str(teste)
+
+
+##### Modelagem Preditiva #####
+
+
+# -> Modelo utilizando Algoritmo de Regressão Logística (que é basicamente um algoritmo de classificação).
+#    Ele entrega de fato uma previsão de classe.
+
+# -> Importante não confundir Regressão Logística (prever classe/categoria) com Regressão Linear (prever valor numérico).
+
+
+# Versão 1 (usando função glm para prever um valor numérico que ao final conseguiremos interpretar como classe/categoria)
+
+modelo_v1 <- glm(data = treino, converteu ~ ., family = binomial(link = 'logit')) 
+
+# lado esq do '~' utilziamos a var alvo, do lado dir do '~' colocamos as var preditoras.
+# O '.' indica que vamos usar todas as variáveis preditoras.
+# O family é 'família' do glm(), neste caso utilizamos a 'binomial' pq ela entrega como resultado uma classe ou categoria.
+# Estamos utilizando a 'família binomia' com o 'logit' porque é este 'logit' que entrega o número que sai na previsão.
+# Poderíamos utilizar a 'multiclasse' quando entregamos várias classes.
+
+
+summary(modelo_v1)
+
+# Deviance Residuals: 
+#     Min        1Q    Median        3Q       Max  
+# -2.74429  -0.24418   0.00572   0.20703   2.26234  
+
+# Coefficients:
+#                      Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)          -8.15188    0.86818  -9.390  < 2e-16 ***
+# numero_acessos        0.06397    0.00720   8.884  < 2e-16 ***
+# numero_cliques        0.16320    0.01645   9.918  < 2e-16 ***
+# faixa_etaria25-34     4.95394    0.61002   8.121 4.62e-16 ***
+# faixa_etaria35-44     5.26812    0.64366   8.185 2.73e-16 ***
+# faixa_etaria45-54     0.62731    0.48849   1.284    0.199    
+# faixa_etaria55-64    -0.09947    0.46198  -0.215    0.830    
+# cidadeCuritiba       -0.51948    0.46393  -1.120    0.263    
+# cidadeFortaleza      -0.35657    0.42570  -0.838    0.402    
+# cidadeNatal          -0.01710    0.44780  -0.038    0.970    
+# cidadeSalvador        0.53860    0.43424   1.240    0.215    
+# navegador_webEdge     0.59578    0.38128   1.563    0.118    
+# navegador_webFirefox  0.28220    0.39775   0.709    0.478    
+# navegador_webSafari   0.62325    0.39910   1.562    0.118    
+
+# Null deviance: 1028.02  on 750  degrees of freedom
+# Residual deviance:  340.81  on 737  degrees of freedom
+# AIC: 368.81
+
+# Number of Fisher Scoring iterations: 7
+
+## Interpretação
+
+# - Podemos notar que para prever a variável alvo 'converteu', poderemos usar 'numero_acessos', 'numero_cliques', 
+#   'faixa_etaria25-34' e faixa_etaria35-44' pois estas tem um valor-p menor que 0.05.
+#   As outras variáveis não são estatisticamente significante para prever a variável alvo.
+
+# - Quanto menor o deviance residual em comparação com o deviance nulo, melhor o ajuste do modelo.
+
+# - O AIC é um critério de informação usado para comparar modelos. Quanto menor o valor do AIC, melhor o ajuste do modelo.
+#   Ele leva em consideração o ajuste do modelo e o número de variáveis no modelo.
+
+# - Number of Fisher Scoring iterations: Indica o número de iterações necessárias para ajustar o modelo. Normalmente, um
+#   número maior de iterações pode indicar que o modelo teve dificuldade em convergir.
+
+
+## Fazendo Previsões no conjunto de teste
+
+previsoes_prob <- predict(modelo_v1, newdata = teste, type = 'response')
+previsoes_prob
+
+# Pegando os valores acima e realizando um ifelse indicando que se o valor for > 0.5 a previsao é 'sim', se não é 'não'
+previsoes_classe <- ifelse(previsoes_prob > 0.5, 'sim', 'não')
+previsoes_classe
+
+
+# Matriz de confusão
+
+matriz_confusao <- confusionMatrix(as.factor(previsoes_classe), teste$converteu)
+matriz_confusao
+
+#           Reference
+# Prediction não sim
+#        não  93  11
+#        sim  15 130
+
+#               Accuracy : 0.8956          
+#                 95% CI : (0.8508, 0.9306)
+#    No Information Rate : 0.5663          
+#    P-Value [Acc > NIR] : <2e-16          
+
+#                  Kappa : 0.7865          
+
+# Mcnemar's Test P-Value : 0.5563          
+                                          
+#            Sensitivity : 0.8611          
+#            Specificity : 0.9220          
+#         Pos Pred Value : 0.8942          
+#         Neg Pred Value : 0.8966          
+#             Prevalence : 0.4337          
+#         Detection Rate : 0.3735          
+#   Detection Prevalence : 0.4177          
+#      Balanced Accuracy : 0.8915          
+                                          
+#       'Positive' Class : não             
+
+# Reference: O modelo fez 130 previsões corretas de "sim" (verdadeiros positivos).
+#            O modelo fez 93 previsões corretas de "não".
+#            Os valores ao lado são os erros. Logo uma diagonal são com os acertos e a outra diagonal são com os erros.
+
+# Accuracy: taxa de erro (vai de 0 a 1), quanto for maior é melhor. Indica que ele está correto em 89,56% das previsões.
+
+# Sensitivity (Sensibilidade): Também chamada de taxa de verdadeiros positivos, é a capacidade do modelo de identificar
+# corretamente os casos positivos (leads que convertem). Neste caso, a sensibilidade é de 0.8611, ou seja, o modelo
+# identifica corretamente 86,11% dos leads que convertem.
+
+# Specificity (Especificidade): É a capacidade do modelo de identificar corretamente os casos negativos (leads que não 
+# convertem). Neste caso, a especificidade é de 0.9220, indicando que o modelo identifica corretamente 92,20% dos leads que
+# não convertem.
+
+# 'Positive' Class : As métricas na matriz de confusão, como sensibilidade, especificidade, valor preditivo positivo e valor
+# preditivo negativo, são calculadas com base na classe "não converteram" como a classe positiva. 
+
+
+
+## Métrica de Avaliação
+acuracia <- sum(diag(matriz_confusao$table)) / sum(matriz_confusao$table)
+acuracia
+
+
+
+
+summary(modelo_v1)
+
+# - Observando o sumário de modelo_v1 constatamos que duas classes da variável "faixa_etaria" são significantes para o
+#   modelo, enquanto outras 2 classes não são. E agora como aplicar codificação quando cada categoria aparece como uma
+#   variável ?
+
+# - E agora, mantemos "faixa_etaria" no dataset? Sim ou não?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
