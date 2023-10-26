@@ -308,7 +308,6 @@ previsoes_prob
 
 # Pegando os valores acima e realizando um ifelse indicando que se o valor for > 0.5 a previsao é 'sim', se não é 'não'
 previsoes_classe <- ifelse(previsoes_prob > 0.5, 'sim', 'não')
-previsoes_classe
 
 
 ## Criando a Matriz de confusão
@@ -444,15 +443,40 @@ acuracia2
 
 
 
+##### Deploy #####
+
+# Salva o modelo treinado em disco
+save(modelo_v2, file = "modelo_v2_class.RData")
+
+# Carrega o modelo do disco
+load("modelo_v2_class.RData")
 
 
+## Criando novos dados para inserir nas previsões
+
+# - iremos criar dados para realizar a previsão com 60 acessos e 20 cliques.
+
+novos_dados <- data.frame(numero_acessos = c(60, 100, 50), numero_cliques = c(20, 40, 4))
+novos_dados
 
 
+## Previsões com os novos dados
+
+previsoes_novos_dados_prob <- predict(modelo_v2, newdata = novos_dados, type = 'response')
+previsoes_novos_dados_prob
+
+previsoes_novos_dados_classe <- ifelse(previsoes_novos_dados_prob > 0.5, 'sim', 'não')
+previsoes_novos_dados_classe
 
 
+## Mostrando as previsões de classe e probabilidade
 
+novos_dados$Lead_Convertido <- previsoes_novos_dados_classe
+novos_dados$Probabilidade <- previsoes_novos_dados_prob * 100
 
+novos_dados
 
+# Fim
 
 
 
