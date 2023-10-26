@@ -14,18 +14,33 @@ library(tidyverse) # manipulação de dados
 library(dplyr)     # manipulação de dados
 library(corrplot)  # criar gráfico de mapa de correlação
 library(ggplot2)   # criar outros gráficos (especificamente de dispersão)
+library(caret)     # usado em tarefas de classificação e regressão para simplificar o processo de treinamento de modelos
 # install.packages("randomForest")
 library(randomForest)
 
+library(mlbench) # carrega dataset Sonar
+library(MASS)    # carrega o dataset Pima
+library(kernlab) # carrega o dataset spam
+
+
+data(Pima.tr)
+dados_Pima <- Pima.tr
+
+data(Sonar)
+dados_Sonar <- Sonar
+
+data(spam)
+dados_spam <- spam
 
 
 
 
+###################   EXEMPLOS UTILIZANDO ALGORITMO DE REGRESSÃO LINEAR)   ###################   
 
 
-# EXEMPLO 1 (utilizando Regressão Linear Múltipla)
+##### EXEMPLO 1
 
-# Contexto: Uma loja de jóias possui um relatório com todas as suas últimas 100 ações de marketing feitas ao longo dos
+# Contexto: Uma loja de jóias possui um relatório com todas as suas últimas 1000 ações de marketing feitas ao longo dos
 #           últimos 2 anos. Sua ação de marketing constitui na contratação de de 1 até 5 pessoas fantasiadas na porta da 
 #           loja. Cada ação de marketing teve um custo específico que varia entre 100 e 2000 reais dependendo da empresa e/ou
 #           quantidade de pessoas contratadas. Durante cada ação era contabilizada as pessoas que entraram na loja e 
@@ -121,6 +136,16 @@ ggplot(dados_loja, aes(x = funcionarios_contratados, y = pessoas_compraram)) +
 
 
 
+
+## Dividindo os dados em treino e teste
+indices <- createDataPartition(dados_loja$pessoas_compraram, p = 0.80, list = FALSE)  
+
+dados_loja_treino <- dados_loja[indices, ]
+dados_loja_teste <- dados_loja[-indices, ]
+
+
+
+
 ##### Modelagem ##### 
 
 
@@ -139,7 +164,7 @@ ggplot(dados_loja, aes(x = funcionarios_contratados, y = pessoas_compraram)) +
 # Multiple R-squared:  0.4834,	Adjusted R-squared:  0.4829 
 # F-statistic: 933.8 on 1 and 998 DF,  p-value: < 2.2e-16
 
-modelo_v1 <- lm(data = dados_loja, pessoas_compraram ~ pessoas_entraram)
+modelo_v1 <- lm(data = dados_loja_treino, pessoas_compraram ~ pessoas_entraram)
 summary(modelo_v1)
 
 # - o modelo de regressão linear simples sugere que o número de pessoas que entram na loja é um preditor significativo
@@ -168,7 +193,7 @@ summary(modelo_v1)
 # Multiple R-squared:  0.4851,	Adjusted R-squared:  0.4836 
 # F-statistic: 312.8 on 3 and 996 DF,  p-value: < 2.2e-16
 
-modelo_v2 <- lm(data = dados_loja, pessoas_compraram ~ valor_gasto_campanha + funcionarios_contratados + pessoas_entraram)
+modelo_v2 <- lm(data = dados_loja_treino, pessoas_compraram ~ valor_gasto_campanha + funcionarios_contratados + pessoas_entraram)
 summary(modelo_v2)
 
 # - o modelo de regressão linear múltipla sugere que o número de pessoas que entram na loja é um preditor significativo 
@@ -179,7 +204,7 @@ summary(modelo_v2)
 
 
 
-#### Interpretação Final
+#### Interpretação de qual modelo usar
 
 # - Como os valores de Residual standard error e Multiple R-squared dos dois modelos são muito próximos e com base nessas
 #   interpretações, o Modelo V2 inclui variáveis que não são estatisticamente significativas (valor_gasto_campanha e 
@@ -190,6 +215,193 @@ summary(modelo_v2)
 #   não oferece benefícios adicionais significativos e inclui variáveis não significativas.
 
 
+#### Previsões
+
+previsoes_dados_loja <- predict(modelo_v1, newdata = dados_loja_teste, type = 'response')
+previsoes_dados_loja
+
+
+#### Previsões com novos dados
+
+# Criando novos dados para inserir nas previsões
+novos_dados_loja <- data.frame(
+  valor_gasto_campanha = c(1000, 1500),
+  funcionarios_contratados = c(2, 2),
+  pessoas_entraram = c(400, 500),
+  pessoas_compraram = c(200, 250)
+)
+
+
+# Fazendo previsões
+previsoes <- predict(modelo_v1, newdata = novos_dados_loja)
+previsoes
+
+
+
+
+## Interpretação final
+
+# - No primeiro cenário, em que gastamos $1,000 em campanha e 400 pessoas entraram na loja, o modelo prevê que cerca de 194.23 
+#   pessoas farão compras. No segundo cenário, com um aumento no gasto da campanha para $1,500 e 500 pessoas entrando na loja,
+#   a previsão é de aproximadamente 244.92 pessoas comprando.
+
+
+
+
+
+
+##### EXEMPLO 2
+
+# Contexto: Você foi contratado para treinar um modelo de regressão para prever o consumo de combustível (milhas por galão)
+#           de cada veículo com base em características como potência do motor, peso, número de cilindros, entre outras.
+#           Isso permitirá identificar quais veículos são mais eficientes em termos de consumo de combustível e otimizar a 
+#           alocação de veículos para rotas específicas.
+
+# Problema de Negócio: Criar um modelo que, ao recebeber novos dados, seja capaz de prever o consumo de combustível
+#                      (milhas por galão) de cada veículo com base em características como potência do motor, peso, número de 
+#                      cilindros, entre outras.
+
+# Variáveis    : 
+# Variável alvo: mpg
+
+
+# Carregando os dados
+dados_mtcars <- mtcars
+
+
+## Análise Exploratória
+
+# verificando valores ausentes
+colSums(is.na(dados_mtcars))
+
+# Verificando tipos de dados
+str(dados_mtcars)
+
+# Sumário estatístico
+summary(dados_mtcars)
+
+# Criando/calculando uma matriz de correlação
+cor_matrix <- cor(dados_mtcars)
+cor_matrix
+
+# Corrplot
+corrplot(cor_matrix,
+         method = "color",
+         type = "upper",
+         addCoef.col = 'springgreen2',
+         tl.col = "black",
+         tl.srt = 45)
+
+
+## Dividindo os dados em treino e teste
+indices <- createDataPartition(dados_mtcars$mpg, p = 0.75, list = FALSE)  
+
+dados_mtcars_treino <- dados_mtcars[indices, ]
+dados_mtcars_teste <- dados_mtcars[-indices, ]
+
+
+
+#### MODELAGEM ####
+
+
+## Versão 1 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando todas as variáveis preditoras
+
+modelo_v1 <- lm(data = dados_mtcars_treino, mpg ~ .)
+
+summary(modelo_v1)
+
+
+## Versão 2 do Modelo (Regressão Linear Simples) ####
+
+# - utilizando somente a variável wt
+
+modelo_v2 <- lm(data = dados_mtcars_treino, mpg ~ wt)
+
+summary(modelo_v2)
+
+
+## Versão 3 do Modelo (Regressão Linear Múltipla com seleção de variáveis) ####
+
+# - utilizando todas as variáveis preditoras menos cyl, vs, am, gear e carb
+
+modelo_v3 <- lm(data = dados_mtcars_treino, mpg ~ disp + hp + drat + wt + qsec)
+
+summary(modelo_v3)
+
+head(dados_mtcars_teste)
+
+
+#### Interpretação de qual modelo usar
+
+# modelo_v1: inclui múltiplas variáveis independentes para fazer previsões. Embora tenha um R-squared mais alto (0.869),
+#            isso não significa necessariamente que seja o melhor modelo. Alguns coeficientes não são significativos e podem
+#            estar introduzindo ruído no modelo.
+
+# modelo_v2: é mais simples, prevendo o consumo de combustível (mpg) com base apenas no peso (wt). Embora seu R-squared seja
+#            um pouco menor (0.7528), ele tem menos complexidade e apenas dois coeficientes significativos, tornando-o mais
+#            interpretable.
+
+# modelo_v3: obteve resultados muito bons e possui um número menor de variáveis, o que pode ser vantajoso em termos de
+#            interpretabilidade.
+
+# - A escolha do melhor modelo depende de seus objetivos. Se você valoriza um modelo com mais variáveis para obter um melhor
+#   ajuste, o "modelo_v1" é uma opção. Se você deseja uma boa performance com menos variáveis, o "modelo_v3" pode ser
+#   preferível. Recomenda-se também validar esses modelos com dados de teste antes de tomar uma decisão final.
+
+
+
+#### Previsões
+
+previsoes_dados_mtcars <- predict(modelo_v3, newdata = dados_mtcars_teste, type = 'response')
+previsoes_dados_mtcars
+
+
+#### Previsões com novos dados
+
+# Criando novos dados para inserir nas previsões
+novos_dados_mtcars <- data.frame(
+  mpg = c(15, 20, 25),   # Valores de consumo de combustível (milhas por galão)
+  cyl = c(8, 4, 6),      # Número de cilindros
+  disp = c(350, 120, 200),  # Cilindrada
+  hp = c(200, 80, 95),    # Potência do motor
+  drat = c(3.5, 4.0, 3.9),  # Taxa de compressão do eixo traseiro
+  wt = c(4.0, 2.5, 3.0),  # Peso do veículo
+  qsec = c(15, 19, 20),  # Tempo para percorrer um quarto de milha
+  vs = c(0, 1, 0),       # Motor em forma de V (0 = não, 1 = sim)
+  am = c(0, 1, 1),       # Transmissão automática (0 = não, 1 = sim)
+  gear = c(3, 4, 5),     # Número de marchas
+  carb = c(4, 2, 1)      # Número de carburadores
+)
+
+# Editando dataset (Removendo variáveis)
+novos_dados_mtcars <- novos_dados_mtcars[, !(names(novos_dados_mtcars) %in% c("cyl", "am", "vs", "gear", "carb"))]
+
+# Visualizando o dataset resultante
+novos_dados_mtcars
+
+# Fazendo previsões com os novos dados
+previsoes_novos_dados_mtcars <- predict(modelo_v3, newdata = novos_dados_mtcars)
+previsoes_novos_dados_mtcars
+
+
+#### Interpretação final
+
+# - Com base nas características dos veículos fornecidas nos novos dados, o modelo de regressão prevê o seguinte consumo de
+#   combustível (milhas por galão):
+  
+# - 1. Novo Dado 1: Estimativa de consumo de combustível de aproximadamente 14.64 mpg.
+# - 2. Novo Dado 2: Estimativa de consumo de combustível de cerca de 25.36 mpg.
+# - 3. Novo Dado 3: Estimativa de consumo de combustível de aproximadamente 23.56 mpg.
+
+# Essas previsões podem ser úteis para avaliar a eficiência de cada veículo em termos de consumo de combustível.
+
+
+
+
+
+##### EXEMPLO 2
 
 
 
@@ -207,7 +419,85 @@ summary(modelo_v2)
 
 
 
-# EXEMPLO 2 (utilizando Classificação)
+
+
+
+###################   EXEMPLOS UTILIZANDO ALGORITMO DE CLASSIFICAÇÃO LINEAR)   ###################   
+
+
+##### EXEMPLO 1
+
+# Contexto
+
+# - Imagine que você trabalha para um instituto de pesquisa botânica que se dedica ao estudo e à preservação da flora em uma
+#   área de conservação. Sua organização está interessada em automatizar a identificação de espécies de flores nativas para
+#   melhor compreender a biodiversidade da região.
+# - Nesse cenário, você pode usar o dataset Iris para criar um modelo de classificação que classifique automaticamente as
+#   flores em diferentes espécies com base em suas características. Isso pode ser uma ferramenta valiosa para identificar
+#   espécies de flores rapidamente, o que é fundamental para estudos de conservação.
+# - Por exemplo, quando os pesquisadores coletam amostras de flores na área de conservação, eles podem medir características
+#   como comprimento e largura das sépalas e pétalas. Em seguida, o modelo de classificação baseado no dataset Iris pode ser 
+#   usado para determinar a espécie da flor com base nessas medidas.
+
+
+# Problema de Negócio: Consiste em desenvolver um modelo de classificação, utilizando o dataset Iris, para automatizar a
+#                      identificação de espécies de flores nativas em uma área de conservação. Isso permitirá aos pesquisadores
+#                      acelerar o processo de classificação com base nas características das flores, contribuindo para um melhor
+#                      entendimento da biodiversidade da região e apoiando esforços de conservação.
+
+
+# Carregando dataset
+dados_iris <- iris
+head(iris)
+
+# Variável alvo: "Species" é a variável que contém as classes ou categorias nas quais as flores são classificadas.
+#                Portanto, "Species" é a variável que você deseja prever ou classificar com base nas outras características 
+#                do dataset.
+
+
+#### Análise Exploratória dos Dados
+
+
+# verificando valores ausentes nas colunas
+colSums(is.na(dados_iris))
+
+# Verificando tipos de dados
+str(dados_iris)
+
+# Sumário estatístico (var Species já esta como do tupo factor)
+summary(dados_iris)
+
+
+# Dividindo os dados em treino e teste
+indices <- createDataPartition(dados_iris$Species, p = 0.75, list = FALSE)
+
+dados_iris_treino <- dados_iris[indices, ]
+dados_iris_teste <- dados_iris[-indices, ]
+
+
+
+##### Modelagem Preditiva #####
+
+## Versão 1 (usando a Máquina de Vetores de Suporte (SVM))
+
+modelo_v1 <- train(Species ~ ., data = dados_iris_treino, method = "svmRadial")
+modelo_v1
+
+# Fazer previsões no conjunto de teste
+previsoes <- predict(modelo_v1, newdata = dados_iris_teste)
+previsoes
+
+# Avaliar o desempenho do modelo
+confusao <- confusionMatrix(previsoes, dados_iris_teste$Species)
+print(confusao)
+
+
+
+
+
+
+
+#### Exemplo 2
 
 
 
@@ -221,13 +511,10 @@ summary(modelo_v2)
 
 
 
+###################   EXEMPLOS UTILIZANDO randomForest)   ###################   
 
 
-
-
-
-
-# EXEMPLO 3 (utilizando randomForest)
+##### EXEMPLO 1 (utilizando randomForest)
 
 # Contexto: exemplo de dados hipotéticos de jogadores de futebol e, em seguida, demonstrar como você pode criar um modelo de
 #           Machine Learning para prever as chances de lesões com base nessas informações.
@@ -328,6 +615,67 @@ print(resultado)
 
 
 
+
+
+
+
+
+
+
+################# DATASETS QUE PODEMOS USAR ######################
+
+#   O R é fornecido com vários datasets de exemplo. Alguns dos datasets mais comuns que já vêm instalados com o R incluem:
+
+# iris: Um conjunto de dados famoso para classificação de flores em três espécies com base em características como comprimento
+# da sépala, largura da sépala, comprimento da pétala e largura da pétala.
+
+# mtcars: Um conjunto de dados que contém informações sobre diferentes modelos de carros, incluindo características como consumo
+# de combustível, número de cilindros, cavalos de potência e muito mais.
+
+# swiss: Um conjunto de dados que contém informações sobre medidas socioeconômicas de diferentes cantões suíços.
+
+# faithful: Este conjunto de dados contém informações sobre as erupções do gêiser "Old Faithful" no Parque Nacional de
+# Yellowstone.
+
+# ChickWeight: Dados sobre o peso de pintinhos em diferentes grupos de tratamento em um experimento de crescimento de galinhas.
+
+# Esses são apenas alguns dos conjuntos de dados que estão disponíveis com a instalação padrão do R.
+
+
+# -> Para estudar a aplicação de modelos de regressão para Machine Learning, você pode usar os conjuntos de dados:
+
+# - mtcars: contém informações sobre vários modelos de carros, incluindo características como consumo de combustível, número
+#   de cilindros, cavalos de potência, entre outros. Pode ser usado para prever o consumo de combustível com base em outras
+#   variáveis.
+# - ChickWeight: prever o peso de pintinhos com base em diferentes tratamentos
+# - swiss: contém informações sobre várias variáveis socioeconômicas e de saúde em diferentes cantões da Suíça. Você pode
+#   usá-lo para aplicar modelos de regressão para prever variáveis como taxa de fertilidade com base em variáveis independentes.
+# - airquality:  Ele inclui variáveis como temperatura, vento, radiação solar e níveis de ozônio, e é frequentemente usado para
+#   prever os níveis de ozônio com base em outras variáveis meteorológicas.
+
+# -> Para estudar a aplicação de modelos de classificação para Machine Learning, você pode usar conjuntos de dados:
+
+# - iris: especialmente popular para problemas de classificação, onde o objetivo é classificar flores em diferentes espécies
+#   com base em suas características.
+# - Sonar: contém dados de sinais sonares enviados e refletidos por minas e rochas no oceano. O objetivo é classificar se o
+#   objeto é uma mina ou uma rocha com base nas características dos sinais.
+# - Pima.tr: contém informações sobre pacientes do sexo feminino de uma tribo indígena Pima no Arizona. O objetivo é classificar
+#   se um paciente desenvolverá diabetes dentro de cinco anos com base em variáveis de saúde, como idade, número de gravidezes,
+#   glicose, pressão sanguínea e outros.
+# - 
+
+# obtem lista com todos datasets
+
+data()
+
+
+
+
+install.packages("kernlab")
+
+library(kernlab)
+
+data(spam)
 
 
 

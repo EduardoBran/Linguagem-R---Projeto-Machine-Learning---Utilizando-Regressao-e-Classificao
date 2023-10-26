@@ -9,7 +9,7 @@ getwd()
 ##########       Projeto Machine Learning em Marketing Digital - Prevendo Número de Usuários Convertidos       ########## 
 
 
-# -> Utilizando Regressão Linear Múltipla
+# -> Utilizando Regressão Linear
 
 # -> Pergunta de Negócio: Qual o número provável de usuários convertidos?
 
