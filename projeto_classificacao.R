@@ -398,18 +398,48 @@ summary(modelo_v1)
 
 
 
+## Versão 2 do modelo
+
+# - Levando em consideração toda a interpretação do modelo v1, removemos "faixa_etaria"
+
+modelo_v2 <- glm(data = treino, converteu ~ numero_acessos + numero_cliques, family = binomial(link = 'logit'))
 
 
+summary(modelo_v2)
+
+# Deviance Residuals: 
+#      Min        1Q    Median        3Q       Max  
+# -2.34791  -0.62952   0.07993   0.58762   2.13941  
+
+# Coefficients:
+#                 Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)    -3.027801   0.252469 -11.993  < 2e-16 ***
+# numero_acessos  0.030439   0.004280   7.112 1.14e-12 ***
+# numero_cliques  0.095377   0.009233  10.330  < 2e-16 ***
+
+# Null deviance: 1028.02  on 750  degrees of freedom
+# Residual deviance:  597.12  on 748  degrees of freedom
+# AIC: 603.12
+
+# Number of Fisher Scoring iterations: 6
 
 
+## Fazendo Previsões no conjunto de teste
+previsoes_prob2 <- predict(modelo_v2, newdata = teste, type = 'response')
+previsoes_classe2 <- ifelse(previsoes_prob2 > 0.5, 'sim', 'não')
 
 
+## Matriz de confusão
+matriz_confusao2 <- confusionMatrix(as.factor(previsoes_classe2), teste$converteu)
+matriz_confusao2
 
 
+## Métrica de Avaliação (mesmo valor encontrado em matriz_confusao)
+acuracia2 <- sum(diag(matriz_confusao2$table)) / sum(matriz_confusao2$table)
+acuracia2
 
 
-
-
+# - Constatamos que o valor da accuracy diminuiu, ou seja, diminuímos a precisão do modelo para evitarmos um modelo tendencioso.
 
 
 
