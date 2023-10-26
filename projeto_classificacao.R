@@ -162,9 +162,9 @@ ggplot(dados_sumarizados, aes(x = reorder(cidade, -numero_acessos), y = numero_a
 
 ##### Pré-Processamento e Encoding de Variáveis Categóricas #####
 
-# - O que é Encodingo de Variáveis Categóricas
+# - O que é Encoding de Variáveis Categóricas
 
-# - Observando nosso dados podemos perceber que temos duas varáaveis quantitativas e todas as outras variáveis são categóricas.
+# - Observando nosso dados podemos perceber que temos duas variáveis quantitativas e todas as outras variáveis são categóricas.
 #   E lembrando que Machine Learning é matemática, como fazer matemática com palavras (variáveis categóricas) ?
 
 # - Logo não podemos criar um modelo de Machine Learning com dados do tipo texto, por isso temos que codificar (encoding) estas
@@ -236,6 +236,7 @@ str(treino)
 str(teste)
 
 
+
 ##### Modelagem Preditiva #####
 
 
@@ -245,14 +246,14 @@ str(teste)
 # -> Importante não confundir Regressão Logística (prever classe/categoria) com Regressão Linear (prever valor numérico).
 
 
-# Versão 1 (usando função glm para prever um valor numérico que ao final conseguiremos interpretar como classe/categoria)
+## Versão 1 (usando função glm para prever um valor numérico que ao final conseguiremos interpretar como classe/categoria)
 
 modelo_v1 <- glm(data = treino, converteu ~ ., family = binomial(link = 'logit')) 
 
-# lado esq do '~' utilziamos a var alvo, do lado dir do '~' colocamos as var preditoras.
-# O '.' indica que vamos usar todas as variáveis preditoras.
-# O family é 'família' do glm(), neste caso utilizamos a 'binomial' pq ela entrega como resultado uma classe ou categoria.
-# Estamos utilizando a 'família binomia' com o 'logit' porque é este 'logit' que entrega o número que sai na previsão.
+# lado esq do '~' utilizamos a variável alvo enquanto do lado direito do '~' colocamos as var preditoras.
+# O '.' indica que vamos usar todas as variáveis do dataset.
+# O family é a 'família' do glm(), neste caso utilizamos a 'binomial' pq ela entrega como resultado uma classe ou categoria.
+# Estamos utilizando a 'família binomia' com o 'logit' porque é este 'logit' que entrega o número que irá sair na previsão.
 # Poderíamos utilizar a 'multiclasse' quando entregamos várias classes.
 
 
@@ -301,7 +302,7 @@ summary(modelo_v1)
 
 
 ## Fazendo Previsões no conjunto de teste
-
+#  (O conjunto de treino é usado para treinar o modelo, enquanto o conjunto de teste é usado para avaliar o desempenho do modelo.)
 previsoes_prob <- predict(modelo_v1, newdata = teste, type = 'response')
 previsoes_prob
 
@@ -310,7 +311,13 @@ previsoes_classe <- ifelse(previsoes_prob > 0.5, 'sim', 'não')
 previsoes_classe
 
 
-# Matriz de confusão
+## Criando a Matriz de confusão
+
+# - Matriz de confusão é uma ferramenta fundamental na avaliação do desempenho de algoritmos de classificação em machine learning. 
+#   Ela é criada para ajudar a entender o quão bem o modelo está fazendo previsões e classificando corretamente as amostras de dados
+#   em diferentes classes. A matriz de confusão é especialmente útil quando se trabalha com problemas de classificação binária, 
+#   onde você está tentando prever se algo pertence a uma de duas classes, como "sim" ou "não", "positivo" ou "negativo",
+#   "spam" ou "não spam" entre outras.
 
 matriz_confusao <- confusionMatrix(as.factor(previsoes_classe), teste$converteu)
 matriz_confusao
@@ -338,7 +345,9 @@ matriz_confusao
 #   Detection Prevalence : 0.4177          
 #      Balanced Accuracy : 0.8915          
                                           
-#       'Positive' Class : não             
+#       'Positive' Class : não
+
+## Interpretando
 
 # Reference: O modelo fez 130 previsões corretas de "sim" (verdadeiros positivos).
 #            O modelo fez 93 previsões corretas de "não".
@@ -359,20 +368,33 @@ matriz_confusao
 
 
 
-## Métrica de Avaliação
+## Métrica de Avaliação (mesmo valor encontrado em matriz_confusao)
 acuracia <- sum(diag(matriz_confusao$table)) / sum(matriz_confusao$table)
 acuracia
 
 
+# - Até aqui...
+#  -> foi criado a v1 do modelo no dataset 'teste' utilizando Regressão Logística e foi feita a interpretação do seu resultado..
+#  -> foi criado a as previsões no dataset 'treino' utilizando o modelo v1.
+#  -> foi criado a matriz de confusão para avaliar o desempenho e foi feita a interpretação do seu resultado.
 
+
+## Agora vamos observar novamente o sumário do modelo_v1
 
 summary(modelo_v1)
 
-# - Observando o sumário de modelo_v1 constatamos que duas classes da variável "faixa_etaria" são significantes para o
-#   modelo, enquanto outras 2 classes não são. E agora como aplicar codificação quando cada categoria aparece como uma
-#   variável ?
+# - Observando o sumário de modelo_v1 constatamos que além das variáveis "numero_acessos" e "numero_cliques", duas classes/categorias
+#   da variável "faixa_etaria" são significantes para modelo, enquanto outras 2 classes não são. E agora como aplicar codificação 
+#   quando cada classe/categoria da variável "faixa_etaria" aparece como uma variável ?
 
-# - E agora, mantemos "faixa_etaria" no dataset? Sim ou não?
+# - O correto seria mantermos "faixa_etaria" no dataset? Sim ou não?
+
+# - Usando como regra que sempre temos que manter no nosso modelo as variáveis significativas e remover as que não são e 
+#   tecnicamente falando o correto seria manter apenas as 2 classes/categorias que são estatisticamente. Então a resposta seria sim.
+#   Mas teríamos um novo problema, estaríamos tornando nosso modelo tendencioso (neste caso de acordo com a idade da pessoa).
+#   Por isso a importância de sempre compreender os dados em que estamos trabalhando.
+
+# - Logo aqui os mais prudente então é remover toda a variável "faixa_etaria".
 
 
 
