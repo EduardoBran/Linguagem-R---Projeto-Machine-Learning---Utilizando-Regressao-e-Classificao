@@ -403,6 +403,154 @@ previsoes_novos_dados_mtcars
 
 ##### EXEMPLO 2
 
+# Contexto:
+
+# Imagine que você trabalha para uma empresa que atua na indústria avícola e é responsável pelo cultivo de frangos e galinhas
+# poedeiras. A qualidade e a saúde das aves são fatores cruciais para o sucesso do negócio. Um dos desafios enfrentados é
+# monitorar o crescimento e o desenvolvimento das aves, especialmente dos pintinhos, que representam uma fase crítica na
+# produção.
+
+# Para garantir que os pintinhos atinjam um peso adequado de forma eficiente, você precisa criar um sistema de monitoramento e 
+# gerenciamento de crescimento. É nesse contexto que o dataset ChickWeight pode ser extremamente útil. Ele contém informações 
+# sobre o peso de pintinhos submetidos a diferentes tratamentos e dietas.
+
+## Problema de Negócio
+
+# - O desafio é desenvolver um modelo de machine learning com base no dataset ChickWeight para prever o peso de pintinhos
+#   com base nos tratamentos e dietas aplicados. Isso permitirá à empresa monitorar e gerenciar o crescimento dos pintinhos
+#   de forma mais eficaz, ajustando os tratamentos conforme necessário e garantindo que as aves atinjam os pesos desejados.
+
+# Variável alvo       : weight
+# Variáveis preditoras: Time, Chick, Diet
+
+
+# Carregando dados
+dados_chick <- as.data.frame(ChickWeight)
+head(dados_chick)
+
+# - weight é a variável de interesse (o peso dos pintinhos), Time está relacionada ao momento da medição, Chick é um
+#   identificador exclusivo dos pintinhos e Diet representa a dieta experimental aplicada. Todas essas variáveis são 
+#   importantes para entender como diferentes tratamentos e o tempo afetam o peso dos pintinhos.
+
+
+## Análise Exploratória
+
+# verificando valores ausentes
+colSums(is.na(dados_chick))
+
+# Verificando tipos de dados
+str(dados_chick)
+
+# Sumário estatístico
+summary(dados_chick)
+
+
+# Dividindo os dados em treino e teste
+indices <- createDataPartition(dados_chick$weight, p = 0.75, list = FALSE)
+
+dados_chick_treino <- dados_chick[indices, ]
+dados_chick_teste <- dados_chick[-indices, ]
+
+
+#### MODELAGEM ####
+
+# - O melhor modelo de machine learning para responder à pergunta de negócio de prever o peso de pintinhos com base nos 
+#   tratamentos e dietas aplicados no dataset ChickWeight é uma Regressão Linear Múltipla.
+
+# Motivo da Escolha:
+  
+# -> Variável Alvo Numérica: A variável alvo "weight" é numérica, o que torna o problema adequado para um modelo de regressão,
+#    cujo objetivo é prever valores numéricos.
+
+# -> Múltiplas Variáveis Preditoras: Temos múltiplas variáveis preditoras, incluindo "Time", "Chick" e "Diet", que podem
+#    influenciar o peso dos pintinhos. A regressão linear múltipla é uma escolha adequada quando você tem várias variáveis
+#    preditoras, pois permite entender o efeito de cada uma delas no resultado.
+
+
+## Versão 1 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando todas as variáveis preditoras
+
+modelo_v1 <- lm(data = dados_chick_treino, weight ~ .)
+
+summary(modelo_v1)
+
+
+## Versão 2 do Modelo (Regressão Linear Simples) ####
+
+# - utilizando todas as variáveis preditoras
+
+modelo_v2 <- lm(data = dados_chick_treino, weight ~ Time)
+
+summary(modelo_v2)
+
+
+## Versão 3 do Modelo (Regressão Linear Múltipla) ####
+
+# - removendo variável Chick
+
+modelo_v3 <- lm(data = dados_chick_treino, weight ~ Time + Diet)
+summary(modelo_v3)
+
+
+## Escolhendo melhor modelo
+
+# - Escolha do Melhor Modelo:
+
+# -> O Modelo 1 é mais complexo e pode ser difícil de interpretar, devido aos muitos coeficientes, alguns dos quais não são
+#    significativos. Ele oferece um bom ajuste, mas a complexidade pode ser um problema. Apresenta um coeficiente de 
+#    determinação (R²) ajustado de 0,8458, indicando um ajuste razoavelmente bom aos dados.
+# -> O Modelo 2 é o mais simples, incluindo apenas "Time", mas o ajuste é mais modesto. Apresenta um R² ajustado de 0,7085,
+#   o que é inferior ao Modelo 1, mas ainda representa um ajuste razoável.
+# -> O Modelo 3 combina simplicidade e ajuste razoável, incluindo informações sobre a dieta, o que é relevante para o problema
+#    de negócio. Apresenta um R² ajustado de 0,7504, um ajuste melhor do que o Modelo 2.
+
+# - Portanto, considerando o equilíbrio entre simplicidade e qualidade de ajuste, o Modelo 3 é uma escolha sólida para prever
+#   o peso dos pintinhos com base em "Time" e "Diet". Ele fornece informações úteis sobre o impacto das dietas na variável alvo,
+#   sem a complexidade excessiva do Modelo 1.
+
+
+#### Previsões
+
+previsoes_dados_chick <- predict(modelo_v3, newdata = dados_chick_teste, type = 'response')
+previsoes_dados_chick
+
+
+#### Previsões com novos dados
+
+# Criando novos dados para inserir nas previsões
+novos_dados_chick <- data.frame(
+  weight = c(42, 51, 59, 64, 76, 93, 48, 55, 61, 71),
+  Time = c(0, 2, 4, 6, 8, 10, 0, 2, 4, 6),
+  Chick = c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2),
+  Diet = c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2)
+)
+
+# Removendo a coluna "Chick" do dataframe
+novos_dados_chick <- subset(novos_dados_chick, select = -Chick)
+novos_dados_chick
+
+# Converta a variável "Diet" em um fator no dataframe novos_dados_chick
+novos_dados_chick$Diet <- as.factor(novos_dados_chick$Diet)
+str(novos_dados_chick)
+
+# Realizando previsões com o modelo
+previsoes_novos_dados_chick <- predict(modelo_v3, newdata = novos_dados_chick)
+previsoes_novos_dados_chick
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### EXEMPLO 3
 
 
 
@@ -695,7 +843,7 @@ print(resultado)
 
 # - mtcars: contém informações sobre vários modelos de carros, incluindo características como consumo de combustível, número
 #   de cilindros, cavalos de potência, entre outros. Pode ser usado para prever o consumo de combustível com base em outras
-#   variáveis.
+#   variáveis. (feito)
 # - ChickWeight: prever o peso de pintinhos com base em diferentes tratamentos
 # - swiss: contém informações sobre várias variáveis socioeconômicas e de saúde em diferentes cantões da Suíça. Você pode
 #   usá-lo para aplicar modelos de regressão para prever variáveis como taxa de fertilidade com base em variáveis independentes.
@@ -705,7 +853,7 @@ print(resultado)
 # -> Para estudar a aplicação de modelos de classificação para Machine Learning, você pode usar conjuntos de dados:
 
 # - iris: especialmente popular para problemas de classificação, onde o objetivo é classificar flores em diferentes espécies
-#   com base em suas características.
+#   com base em suas características. (feito)
 # - Sonar: contém dados de sinais sonares enviados e refletidos por minas e rochas no oceano. O objetivo é classificar se o
 #   objeto é uma mina ou uma rocha com base nas características dos sinais.
 # - Pima.tr: contém informações sobre pacientes do sexo feminino de uma tribo indígena Pima no Arizona. O objetivo é classificar
