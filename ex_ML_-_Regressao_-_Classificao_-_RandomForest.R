@@ -480,6 +480,21 @@ dados_iris_teste <- dados_iris[-indices, ]
 
 ## Versão 1 (usando a Máquina de Vetores de Suporte (SVM))
 
+# - Para problemas de classificação com variáveis de resposta binárias ("sim ou "não"), o glm() (Generalized Linear Model) é
+#   uma opção apropriada tal como o projeto. No entanto, você pode usar outros modelos, como árvores de decisão, florestas
+#   aleatórias, Support Vector Machines (SVM), ou Redes Neurais Artificiais (RNA), dependendo do problema e dos dados.
+
+# - Para problemas de classificação multiclasse, como o exemplo do conjunto de dados Iris, você pode usar uma variedade de
+#   algoritmos, incluindo o train() do pacote caret em R, que permite ajustar modelos de classificação usando várias
+#   técnicas. Além disso, você pode usar SVM, k-vizinhos mais próximos, árvores de decisão, redes neurais, entre outros.
+
+# Problema de Negócio: Consiste em desenvolver um modelo de classificação, utilizando o dataset Iris, para automatizar a
+#                      identificação de espécies de flores nativas em uma área de conservação. Isso permitirá aos pesquisadores
+#                      acelerar o processo de classificação com base nas características das flores, contribuindo para um melhor
+#                      entendimento da biodiversidade da região e apoiando esforços de conservação.
+
+
+
 modelo_v1 <- train(Species ~ ., data = dados_iris_treino, method = "svmRadial")
 modelo_v1
 
@@ -492,6 +507,38 @@ confusao <- confusionMatrix(previsoes, dados_iris_teste$Species)
 print(confusao)
 
 
+
+#### Previsões com novos dados
+
+# Criando novos dados para inserir nas previsões
+novos_dados_iris <- data.frame(Sepal.Length = c(5.0, 5.8, 4.0, 8.0, 10.2, 1.8),
+                               Sepal.Width = c(3.6, 4.0, 2.9, 7.5, 9.8, 1.0),
+                               Petal.Length = c(1.4, 1.7, 1.1, 4.1, 6.2, 0.7),
+                               Petal.Width = c(0.3, 0.5, 0.2, 2.0, 4.2, 0.1))
+novos_dados_iris
+
+# Fazendo previsões com os novos dados
+previsoes_novos_dados_iris <- predict(modelo_v1, newdata = novos_dados_iris)
+previsoes_novos_dados_iris
+
+# - Em resumo, os resultados positivos do modelo no conjunto de teste indicam que ele está funcionando bem com base nas
+#   amostras disponíveis. No entanto, é uma prática comum verificar e interpretar as previsões do modelo em relação aos
+#   dados reais para entender seu desempenho e identificar possíveis áreas de melhoria.
+
+
+#### Interpretação final
+
+# - O modelo de classificação utilizando o algoritmo Support Vector Machines (SVM) com o kernel de função de base radial (RBF)
+#   demonstrou um excelente desempenho na tarefa de identificar espécies de flores nativas em uma área de conservação.
+#   O modelo foi treinado usando um conjunto de treinamento e posteriormente testado em um conjunto de teste. Abaixo estão
+# - A acurácia global do modelo foi de 97.22%, o que indica que o modelo foi capaz de classificar corretamente a maioria das
+#   amostras.
+# - A matriz de confusão fornece informações detalhadas sobre o desempenho do modelo em cada classe. As células da matriz 
+#   indicam quantas amostras foram classificadas corretamente (diagonal principal) e onde ocorreram erros. O modelo teve
+#   um desempenho muito sólido, com sensibilidade próxima de 1 para todas as classes, indicando que poucas amostras foram 
+#   classificadas erroneamente.
+# - As estatísticas por classe mostram métricas de desempenho específicas para cada espécie de flor. A sensibilidade, 
+#   especificidade e valores preditivos indicam quão bem o modelo lidou com cada classe individualmente.
 
 
 
