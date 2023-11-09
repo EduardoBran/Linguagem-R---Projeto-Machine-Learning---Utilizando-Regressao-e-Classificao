@@ -17,6 +17,8 @@ library(ggplot2)   # criar outros gráficos (especificamente de dispersão)
 library(caret)     # usado em tarefas de classificação e regressão para simplificar o processo de treinamento de modelos
 # install.packages("randomForest")
 library(randomForest)
+library(caTools)   # contém a função sample.split() que cria uma amostra que irá fazer a divisão entre dados de treinos e testes
+# de maneira aleatória
 
 library(mlbench) # carrega dataset Sonar
 library(MASS)    # carrega o dataset Pima
@@ -38,7 +40,9 @@ dados_spam <- spam
 ###################   EXEMPLOS UTILIZANDO ALGORITMO DE REGRESSÃO LINEAR)   ###################   
 
 
-##### EXEMPLO 1
+
+################# EXEMPLO 1
+
 
 # Contexto: Uma loja de jóias possui um relatório com todas as suas últimas 1000 ações de marketing feitas ao longo dos
 #           últimos 2 anos. Sua ação de marketing constitui na contratação de de 1 até 5 pessoas fantasiadas na porta da 
@@ -145,7 +149,6 @@ dados_loja_teste <- dados_loja[-indices, ]
 
 
 
-
 ##### Modelagem ##### 
 
 
@@ -172,7 +175,6 @@ summary(modelo_v1)
 #   pode ser explicada por essa variável preditora. No entanto, o modelo não é uma ótima combinação para explicar
 #   completamente a variabilidade na variável alvo, uma vez que outros fatores não incluídos no modelo também podem 
 #   desempenhar um papel importante.
-
 
 
 
@@ -250,7 +252,9 @@ previsoes
 
 
 
-##### EXEMPLO 2
+
+################# EXEMPLO 2
+
 
 # Contexto: Você foi contratado para treinar um modelo de regressão para prever o consumo de combustível (milhas por galão)
 #           de cada veículo com base em características como potência do motor, peso, número de cilindros, entre outras.
@@ -401,7 +405,9 @@ previsoes_novos_dados_mtcars
 
 
 
-##### EXEMPLO 2
+
+################# EXEMPLO 3
+
 
 # Contexto:
 
@@ -550,7 +556,7 @@ previsoes_novos_dados_chick
 
 
 
-##### EXEMPLO 3
+#################EXEMPLO 4
 
 
 
@@ -626,22 +632,15 @@ dados_iris_teste <- dados_iris[-indices, ]
 
 ##### Modelagem Preditiva #####
 
-## Versão 1 (usando a Máquina de Vetores de Suporte (SVM))
+## Versão 1 (usando train())
 
 # - Para problemas de classificação com variáveis de resposta binárias ("sim ou "não"), o glm() (Generalized Linear Model) é
-#   uma opção apropriada tal como o projeto. No entanto, você pode usar outros modelos, como árvores de decisão, florestas
+#   uma opção apropriada tal como o projeto "iris". No entanto, você pode usar outros modelos, como árvores de decisão, florestas
 #   aleatórias, Support Vector Machines (SVM), ou Redes Neurais Artificiais (RNA), dependendo do problema e dos dados.
 
 # - Para problemas de classificação multiclasse, como o exemplo do conjunto de dados Iris, você pode usar uma variedade de
 #   algoritmos, incluindo o train() do pacote caret em R, que permite ajustar modelos de classificação usando várias
 #   técnicas. Além disso, você pode usar SVM, k-vizinhos mais próximos, árvores de decisão, redes neurais, entre outros.
-
-# Problema de Negócio: Consiste em desenvolver um modelo de classificação, utilizando o dataset Iris, para automatizar a
-#                      identificação de espécies de flores nativas em uma área de conservação. Isso permitirá aos pesquisadores
-#                      acelerar o processo de classificação com base nas características das flores, contribuindo para um melhor
-#                      entendimento da biodiversidade da região e apoiando esforços de conservação.
-
-
 
 modelo_v1 <- train(Species ~ ., data = dados_iris_treino, method = "svmRadial")
 modelo_v1
@@ -694,7 +693,236 @@ previsoes_novos_dados_iris
 
 
 
+
 #### Exemplo 2
+
+# Contexto: Utilizando a base de dados 'Sonar' que contém dados de sinais sonares enviados e refletidos por minas e rochas no oceano.
+#           O objetivo é classificar se o objeto é uma mina ou uma rocha com base nas características dos sinais.
+
+# Crie um dataframe com os resultados obtidos nas previsões e compara com os resultados reais.
+
+## Carregando base de dados
+
+data(Sonar)
+dados <- Sonar
+
+head(dados)
+
+View(dados)
+
+
+## Analise Exploratória
+
+# Verificando dados ausentes
+any(is.na(dados))
+colSums(is.na(dados))
+
+# Tipos dos dados
+str(dados)
+summary(dados)
+dim(dados)
+
+
+
+# Normalizando
+
+# Exclua a variável "Class" usando indexação negativa
+dados_norma <- dados[, -ncol(dados)]
+
+maxs <- apply(dados_norma, 2, max)
+mins <- apply(dados_norma, 2, min)
+
+maxs
+mins
+
+dados_norma <- as.data.frame(scale(dados_norma, center = mins, scale = maxs - mins))
+head(dados_norma)
+
+str(dados_norma)
+summary(dados_norma)
+
+# Adicione a variável "Class" de volta a "dados_norma"
+dados_norma <- cbind(dados_norma, dados$Class)
+
+# Renomear a coluna "dados$Class" para "Class"
+names(dados_norma)[names(dados_norma) == "dados$Class"] <- "Class"
+
+
+
+## Criando Dados de Treino e Teste
+
+amostra <- sample.split(dados$Class, SplitRatio = 0.80)
+
+treino <- subset(dados, amostra == TRUE)
+teste <- subset(dados, amostra == FALSE)
+
+
+amostra_norma <- sample.split(dados_norma$Class, SplitRatio = 0.80)
+
+treino_norma <- subset(dados_norma, amostra_norma == TRUE)
+teste_norma <- subset(dados_norma, amostra_norma == FALSE)
+
+# -> Lembrando sempre que: Treinamos o modelo com dados de TREINO e fazemos predições com dados de TESTE
+
+
+
+##### Modelagem (utlizando kernel "vanilladot")
+library(kernlab)
+
+# Obtendo nome das colunas para automatizar a criação da fórmula
+coluna_nomes <- names(treino)
+coluna_nomes
+formula <- as.formula(paste("Class ~", paste(coluna_nomes[!coluna_nomes %in% "Class"], collapse = " + ")))
+formula
+
+
+## DADOS ORIGINAIS
+
+# Treinando o Modelo (ao invés de 'formula' eu poderia escrever o nome das colunas)
+modelo_ksvm_van <- ksvm(formula, data = treino, kernel = "vanilladot")
+
+modelo_ksvm_van # Training error : 0.08982
+
+
+## Visualizando perfomance do modelo
+modelo_predictions_ksvm_van <- predict(modelo_ksvm_van, teste)
+head(modelo_predictions_ksvm_van)
+
+
+table(modelo_predictions_ksvm_van, teste$Class) # matriz de confusão
+
+
+resultados_ksvm_van <- cbind.data.frame(Class_real = teste$Class, predictions = modelo_predictions_ksvm_van)
+head(resultados_ksvm_van)
+View(resultados_ksvm_van)
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+vetor_ksvm_van <- modelo_predictions_ksvm_van == teste$Class
+
+table(vetor_ksvm_van)                    # FALSE 7             TRUE 34
+prop.table(table(vetor_ksvm_van))        # FALSE 0.1707317     TRUE 0.8292683  
+
+
+
+
+## DADOS NORMALIZADOS
+
+modelo_ksvm_van_n <- ksvm(formula, data = treino_norma, kernel = "vanilladot")
+
+modelo_ksvm_van_n # Training error : 0.017964
+
+
+## Visualizando perfomance do modelo
+modelo_predictions_ksvm_van_n <- predict(modelo_ksvm_van_n, teste_norma)
+head(modelo_predictions_ksvm_van_n)
+
+
+table(modelo_predictions_ksvm_van_n, teste_norma$Class) # matriz de confusão
+
+
+resultados_ksvm_van_n <- cbind.data.frame(Class_real = teste_norma$Class, predictions = modelo_predictions_ksvm_van_n)
+head(resultados_ksvm_van_n)
+View(resultados_ksvm_van_n)
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+vetor_ksvm_van_n <- modelo_predictions_ksvm_van_n == teste_norma$Class
+
+table(vetor_ksvm_van_n)                    # FALSE 14             TRUE 27
+prop.table(table(vetor_ksvm_van_n))        # FALSE 0.3414634      TRUE 0.6585366   
+
+
+
+
+
+
+
+##### Modelagem (utlizando kernel "rbfdot")
+library(kernlab)
+
+# Obtendo nome das colunas para automatizar a criação da fórmula
+coluna_nomes <- names(treino)
+coluna_nomes
+formula <- as.formula(paste("Class ~", paste(coluna_nomes[!coluna_nomes %in% "Class"], collapse = " + ")))
+formula
+
+
+## DADOS ORIGINAIS
+
+# Treinando o Modelo (ao invés de 'formula' eu poderia escrever o nome das colunas)
+modelo_ksvm_rbf <- ksvm(formula, data = treino, kernel = "rbfdot")
+
+modelo_ksvm_rbf # Training error : 0.035928
+
+
+## Visualizando perfomance do modelo
+modelo_predictions_ksvm_rbf <- predict(modelo_ksvm_rbf, teste)
+head(modelo_predictions_ksvm_rbf)
+
+
+table(modelo_predictions_ksvm_rbf, teste$Class) # matriz de confusão
+
+
+resultados_ksvm_rbf <- cbind.data.frame(Class_real = teste$Class, predictions = modelo_predictions_ksvm_rbf)
+head(resultados_ksvm_rbf)
+View(resultados_ksvm_rbf)
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+vetor_ksvm_rbf <- modelo_predictions_ksvm_rbf == teste$Class
+
+table(vetor_ksvm_rbf)                    # FALSE 6             TRUE 35
+prop.table(table(vetor_ksvm_rbf))        # FALSE 0.1463415     TRUE 0.8536585   
+
+
+
+
+## DADOS NORMALIZADOS
+
+modelo_ksvm_rbf_n <- ksvm(formula, data = treino_norma, kernel = "rbfdot")
+
+modelo_ksvm_rbf_n # Training error : 0.023952
+
+
+## Visualizando perfomance do modelo
+modelo_predictions_ksvm_rbf_n <- predict(modelo_ksvm_rbf_n, teste_norma)
+head(modelo_predictions_ksvm_rbf_n)
+
+
+table(modelo_predictions_ksvm_rbf_n, teste_norma$Class) # matriz de confusão
+
+
+resultados_ksvm_rbf_n <- cbind.data.frame(Class_real = teste_norma$Class, predictions = modelo_predictions_ksvm_rbf_n)
+head(resultados_ksvm_rbf_n)
+View(resultados_ksvm_rbf_n)
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+vetor_ksvm_rbf_n <- modelo_predictions_ksvm_rbf_n == teste_norma$Class
+
+table(vetor_ksvm_rbf_n)                    # FALSE 13             TRUE 28
+prop.table(table(vetor_ksvm_rbf_n))        # FALSE 0.3170732      TRUE 0.6829268    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
