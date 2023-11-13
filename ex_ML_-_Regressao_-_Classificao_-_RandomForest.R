@@ -24,6 +24,8 @@ library(mlbench) # carrega dataset Sonar
 library(MASS)    # carrega o dataset Pima
 library(kernlab) # carrega o dataset spam
 
+library(readxl)
+
 
 data(Pima.tr)
 dados_Pima <- Pima.tr
@@ -452,10 +454,15 @@ summary(dados_chick)
 
 
 # Dividindo os dados em treino e teste
+
+set.seed(120)
+
 indices <- createDataPartition(dados_chick$weight, p = 0.75, list = FALSE)
 
 dados_chick_treino <- dados_chick[indices, ]
 dados_chick_teste <- dados_chick[-indices, ]
+
+
 
 
 #### MODELAGEM ####
@@ -479,27 +486,38 @@ dados_chick_teste <- dados_chick[-indices, ]
 
 modelo_v1 <- lm(data = dados_chick_treino, weight ~ .)
 
-summary(modelo_v1)
+summary(modelo_v1) # 0.8546
 
 
 ## Versão 2 do Modelo (Regressão Linear Simples) ####
 
-# - utilizando todas as variáveis preditoras
+# - utilizando somente a variável Time
 
 modelo_v2 <- lm(data = dados_chick_treino, weight ~ Time)
 
-summary(modelo_v2)
-
+summary(modelo_v2) # 0.6913
+ 
 
 ## Versão 3 do Modelo (Regressão Linear Múltipla) ####
 
+# - removendo variável Diet
+
+modelo_v3 <- lm(data = dados_chick_treino, weight ~ Time + Chick)
+
+summary(modelo_v3) # 0.8546
+
+
+## Versão 4 do Modelo (Regressão Linear Múltipla) ####
+
 # - removendo variável Chick
 
-modelo_v3 <- lm(data = dados_chick_treino, weight ~ Time + Diet)
-summary(modelo_v3)
+modelo_v4 <- lm(data = dados_chick_treino, weight ~ Time + Diet)
+
+summary(modelo_v4) # 0.7377
 
 
-## Escolhendo melhor modelo
+
+### Escolhendo melhor modelo
 
 # - Escolha do Melhor Modelo:
 
@@ -508,10 +526,10 @@ summary(modelo_v3)
 #    determinação (R²) ajustado de 0,8458, indicando um ajuste razoavelmente bom aos dados.
 # -> O Modelo 2 é o mais simples, incluindo apenas "Time", mas o ajuste é mais modesto. Apresenta um R² ajustado de 0,7085,
 #   o que é inferior ao Modelo 1, mas ainda representa um ajuste razoável.
-# -> O Modelo 3 combina simplicidade e ajuste razoável, incluindo informações sobre a dieta, o que é relevante para o problema
-#    de negócio. Apresenta um R² ajustado de 0,7504, um ajuste melhor do que o Modelo 2.
+# -> O Modelo 4 combina simplicidade e ajuste razoável, incluindo informações sobre a dieta, o que é relevante para o problema
+#    de negócio. Apresenta um R² ajustado de 0,7377, um ajuste melhor do que o Modelo 2.
 
-# - Portanto, considerando o equilíbrio entre simplicidade e qualidade de ajuste, o Modelo 3 é uma escolha sólida para prever
+# - Portanto, considerando o equilíbrio entre simplicidade e qualidade de ajuste, o Modelo 4 é uma escolha sólida para prever
 #   o peso dos pintinhos com base em "Time" e "Diet". Ele fornece informações úteis sobre o impacto das dietas na variável alvo,
 #   sem a complexidade excessiva do Modelo 1.
 
@@ -520,6 +538,41 @@ summary(modelo_v3)
 
 previsoes_dados_chick <- predict(modelo_v3, newdata = dados_chick_teste, type = 'response')
 previsoes_dados_chick
+
+
+## Conferindo as previsões
+resultados_chick <- cbind.data.frame(Weight_Real = dados_chick_teste$weight, predictions = previsoes_dados_chick)
+round(head(resultados_chick))
+View(resultados_chick)
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+resultados_vetor <- resultados_chick == dados_chick_teste$weight
+
+table(resultados_vetor)                    # FALSE 143        TRUE 143
+prop.table(table(resultados_vetor))        # FALSE 0.5        TRUE 0.5
+
+
+resultados_allequal <- all.equal(dados_chick_teste$weight, resultados_chick$predictions)
+resultados_allequal # [1] "Mean relative difference: 0.1838329"
+
+# Isso sugere que, em média, as previsões diferem dos valores reais em cerca de 18.38%.
+
+
+## Avalie o modelo
+mse_chick <- mean((previsoes_dados_chick - dados_chick_teste$weight)^2)
+rmse_chick <- sqrt(mse_chick)
+
+cat("MSE do Modelo Chick:", mse_chick, "\n")
+cat("RMSE do Modelo Chick:", rmse_chick, "\n")
+
+
+## Visualize as previsões em comparação com os valores reais
+ggplot(resultados_chick, aes(x = Weight_Real, y = predictions)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  labs(title = "Comparação entre Peso Real e Previsões")
+
 
 
 #### Previsões com novos dados
@@ -556,21 +609,192 @@ previsoes_novos_dados_chick
 
 
 
-#################EXEMPLO 4
+################# EXEMPLO 4
+
+# Imagine que você é um cientista de dados trabalhando em uma agência de controle de qualidade do ar em uma cidade.
+# A sua tarefa é desenvolver um modelo de machine learning para prever os níveis de ozônio com base em várias variáveis meteorológicas. 
+# Aqui está um cenário para o seu projeto:
+  
+# Contexto: Você faz parte de uma equipe responsável por monitorar e melhorar a qualidade do ar em uma cidade.
+#           A cidade tem experimentado problemas ocasionais com altos níveis de ozônio, que podem representar riscos para a saúde
+#           pública.
+
+# - Você possui um conjunto de dados chamado airquality, que contém informações sobre temperatura, vento, radiação solar e níveis de
+#   ozônio coletados ao longo do tempo.
+# - Este conjunto de dados é uma ferramenta valiosa para entender a relação entre as variáveis meteorológicas e os níveis de ozônio.
+
+# Objetivo -> Seu objetivo principal é construir um modelo de machine learning capaz de prever os níveis de ozônio com base nas
+#             condições meteorológicas.
+#             Esse modelo pode ser usado para antecipar e alertar sobre possíveis picos de ozônio, permitindo que a cidade tome 
+#             medidas preventivas.
+
+
+dados <- airquality
+head(dados)
+
+
+## Análise Exploratória
+
+# verificando valores ausentes
+any(is.na(dados))
+colSums(is.na(dados))
+dim(dados)
+
+# Removendo dados ausentes
+dados <- na.omit(dados)
+dim(dados)
+
+# Crie um novo índice e atribui o novo índice como nomes de linha
+novo_indice <- 1:nrow(dados)
+rownames(dados) <- novo_indice
+
+
+str(dados)
+summary(dados)
+
+
+## Transformar Month e Day em fatores não ordenados
+dados$Month <- factor(dados$Month)
+dados$Day <- factor(dados$Day)
+
+
+str(dados)
+summary(dados)
+
+
+## Dividindo os dados em treino e teste
+
+set.seed(120)
+
+indices <- createDataPartition(dados$Ozone, p = 0.80, list = FALSE)
+
+dados_treino <- dados[indices, ]
+dados_teste <- dados[-indices, ]
 
 
 
 
 
+##### Modelagem
+
+## Versão 1 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando todas as variáveis preditoras
+
+modelo_v1 <- lm(data = dados_treino, Ozone ~ .)  
+
+summary(modelo_v1) # 0.8176
+
+
+## Versão 2 do Modelo (Regressão Linear Simples) ####
+
+# - utilizando somente a variável Wind
+
+modelo_v2 <- lm(data = dados_treino, Ozone ~ Wind)
+
+summary(modelo_v2) # 0.3424
+
+
+## Versão 3 do Modelo (Regressão Linear Simples) ####
+
+# - utilizando somente a variável Wind Temp
+
+modelo_v3 <- lm(data = dados_treino, Ozone ~ Temp)
+
+summary(modelo_v3) # 0.5118
+
+
+## Versão 4 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando somente as variáveis Wind e Temp
+
+modelo_v4 <- lm(data = dados_treino, Ozone ~ Wind + Temp)
+
+summary(modelo_v4) # 0.6009
+
+
+## Versão 5 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando somente as variáveis Wind, Temp e Month
+
+modelo_v5 <- lm(data = dados_treino, Ozone ~ Wind + Temp + Month)
+
+summary(modelo_v5) # 0.6428
+
+
+
+## Versão 6 do Modelo (Regressão Linear Múltipla) ####
+
+# - utilizando todas as variáveis originais (sem fator)
+
+dados_original <- airquality
+dados_original <- na.omit(dados_original)
+dim(dados)
+indices <- createDataPartition(dados_original$Ozone, p = 0.80, list = FALSE)
+dados_treino_original <- dados[indices, ]
+dados_teste_original <- dados[-indices, ]
+
+modelo_v6 <- lm(data = dados_treino_original, Ozone ~ .)
+
+summary(modelo_v6) # 0.8268
+
+
+#### Previsões
+
+previsoes_dados_modelo_v1 <- predict(modelo_v1, newdata = dados_teste)
+previsoes_dados_modelo_v1
+previsoes_dados_modelo_v5 <- predict(modelo_v5, newdata = dados_teste)
+previsoes_dados_modelo_v5
+
+
+
+## Conferindo as previsões
+resultados_modelo_v1 <- cbind.data.frame(Ozone_Real = dados_teste$Ozone, predictions = previsoes_dados_modelo_v1)
+head(resultados_modelo_v1)
+View(resultados_modelo_v1)
+
+resultados_modelo_v5 <- cbind.data.frame(Ozone_Real = dados_teste$Ozone, predictions = previsoes_dados_modelo_v5)
+head(resultados_modelo_v5)
+View(resultados_modelo_v5)
+
+
+
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+resultados_vetor_modelo_v1 <- resultados_modelo_v1 == dados_teste$Ozone
+resultados_vetor_modelo_v5 <- resultados_modelo_v5 == dados_teste$Ozone
+
+table(resultados_vetor_modelo_v1)                    # FALSE 21        TRUE 21
+prop.table(table(resultados_vetor_modelo_v1))        # FALSE 0.5       TRUE 0.5
+table(resultados_vetor_modelo_v5)                    # FALSE 21        TRUE 21
+prop.table(table(resultados_vetor_modelo_v5))        # FALSE 0.5       TRUE 0.5
 
 
 
 
 
+Aresultados_vetor_modelo_v5 <- all.equal(dados_teste$Ozone, resultados_modelo_v5$predictions)
+Aresultados_vetor_modelo_v5 # "Mean relative difference: 0.3787055"
+
+# Isso sugere que, em média, as previsões diferem dos valores reais em cerca de 37.87%.
+
+Aresultados_vetor_modelo_v5_tol <- all.equal(dados_teste$Ozone, resultados_modelo_v5$predictions, tolerance = 1e-5)
+Aresultados_vetor_modelo_v5_tol
+
+
+## Calculando o Mean Squared Error (métrica de avaliação do desempenho do modelo de regressão)
+#  (quanto menor o MSE, melhor o desempenho do modelo de regressão)
+
+mse_modelo_v1 <- mean((previsoes_dados_modelo_v1 - dados_teste$Ozone)^2)
+cat("MSE Modelo_v1:", mse_modelo_v1, "\n") # 701.597 
+
+mse_modelo_v5 <- mean((previsoes_dados_modelo_v5 - dados_teste$Ozone)^2)
+cat("MSE Modelo_v5:", mse_modelo_v5, "\n") # 797.2038 (valor alto)
+ 
 
 
 
-
+differences <- resultados_modelo_v1$Ozone_Real - resultados_modelo_v1$predictions
+print(differences)
 
 
 
@@ -1072,18 +1296,19 @@ print(resultado)
 # - mtcars: contém informações sobre vários modelos de carros, incluindo características como consumo de combustível, número
 #   de cilindros, cavalos de potência, entre outros. Pode ser usado para prever o consumo de combustível com base em outras
 #   variáveis. (feito)
-# - ChickWeight: prever o peso de pintinhos com base em diferentes tratamentos
-# - swiss: contém informações sobre várias variáveis socioeconômicas e de saúde em diferentes cantões da Suíça. Você pode
-#   usá-lo para aplicar modelos de regressão para prever variáveis como taxa de fertilidade com base em variáveis independentes.
+# - ChickWeight: prever o peso de pintinhos com base em diferentes tratamentos. (feito)
 # - airquality:  Ele inclui variáveis como temperatura, vento, radiação solar e níveis de ozônio, e é frequentemente usado para
 #   prever os níveis de ozônio com base em outras variáveis meteorológicas.
+# - swiss: contém informações sobre várias variáveis socioeconômicas e de saúde em diferentes cantões da Suíça. Você pode
+#   usá-lo para aplicar modelos de regressão para prever variáveis como taxa de fertilidade com base em variáveis independentes.
+
 
 # -> Para estudar a aplicação de modelos de classificação para Machine Learning, você pode usar conjuntos de dados:
 
 # - iris: especialmente popular para problemas de classificação, onde o objetivo é classificar flores em diferentes espécies
 #   com base em suas características. (feito)
 # - Sonar: contém dados de sinais sonares enviados e refletidos por minas e rochas no oceano. O objetivo é classificar se o
-#   objeto é uma mina ou uma rocha com base nas características dos sinais.
+#   objeto é uma mina ou uma rocha com base nas características dos sinais. (feito)
 # - Pima.tr: contém informações sobre pacientes do sexo feminino de uma tribo indígena Pima no Arizona. O objetivo é classificar
 #   se um paciente desenvolverá diabetes dentro de cinco anos com base em variáveis de saúde, como idade, número de gravidezes,
 #   glicose, pressão sanguínea e outros.
@@ -1101,6 +1326,8 @@ install.packages("kernlab")
 library(kernlab)
 
 data(spam)
+
+
 
 
 
