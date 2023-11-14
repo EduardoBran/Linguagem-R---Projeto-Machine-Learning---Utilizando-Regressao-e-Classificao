@@ -803,7 +803,7 @@ print(differences)
 ###################   EXEMPLOS UTILIZANDO ALGORITMO DE CLASSIFICAÇÃO LINEAR)   ###################   
 
 
-##### EXEMPLO 1
+###### Exemplo 1
 
 # Contexto
 
@@ -918,7 +918,7 @@ previsoes_novos_dados_iris
 
 
 
-#### Exemplo 2
+###### Exemplo 2
 
 # Contexto: Utilizando a base de dados 'Sonar' que contém dados de sinais sonares enviados e refletidos por minas e rochas no oceano.
 #           O objetivo é classificar se o objeto é uma mina ou uma rocha com base nas características dos sinais.
@@ -1058,10 +1058,6 @@ prop.table(table(vetor_ksvm_van_n))        # FALSE 0.3414634      TRUE 0.6585366
 
 
 
-
-
-
-
 ##### Modelagem (utlizando kernel "rbfdot")
 library(kernlab)
 
@@ -1134,22 +1130,161 @@ prop.table(table(vetor_ksvm_rbf_n))        # FALSE 0.3170732      TRUE 0.6829268
 
 
 
+###### Exemplo 3
+
+# - Pima.tr: contém informações sobre pacientes do sexo feminino de uma tribo indígena Pima no Arizona. 
+#   
+# - O objetivo é classificar se um paciente desenvolverá diabetes dentro de cinco anos com base em variáveis de saúde, como idade,
+#   número de gravidezes, glicose, pressão sanguínea e outros.
+
+
+data(Pima.tr)
+dados_pima <- Pima.tr
+
+head(dados_pima)
+
+
+# -> Variável Alvo: type
+
+
+## Analise Exploratória
+
+# Verificando dados ausentes
+any(is.na(dados_pima))
+colSums(is.na(dados_pima))
+
+# Tipos dos dados
+str(dados_pima)
+summary(dados_pima)
+dim(dados_pima)
+
+
+## Criando Dados de Treino e Teste
+
+set.seed(120)
+amostra <- sample.split(dados_pima$type, SplitRatio = 0.85)
+
+treino <- subset(dados_pima, amostra == TRUE)
+teste <- subset(dados_pima, amostra == FALSE)
+
+# -> Lembrando sempre que: Treinamos o modelo com dados de TREINO e fazemos predições com dados de TESTE
+
+
+
+#### Modelagem (utilizando Algoritmo de Regressão Logística)
+
+modelo_glm_v1 <- glm(data = treino, type ~ ., family = binomial(link = 'logit')) 
+
+summary(modelo_glm_v1)  # Deviance Residual: 150.05   AIC: 166.05
+
+
+modelo_glm_v2 <- glm(data = treino, type ~ glu + ped, family = binomial(link = 'logit')) 
+
+summary(modelo_glm_v2)  # Deviance Residual: 164.31   AIC: 170.31
+
+
+modelo_glm_v3 <- glm(data = treino, type ~ glu, family = binomial(link = 'logit'))
+
+summary(modelo_glm_v3)  # Deviance Residual: 170.33   AIC: 174.33
+
+
+
+
+##### Modelagem (utlizando kernel "vanilladot")
+
+modelo_ksvm_van_v1 <- ksvm(type ~ ., data = treino, kernel = "vanilladot")
+
+modelo_ksvm_van_v1 # Training error : 0.211765 
+
+
+modelo_ksvm_van_v2 <- ksvm(type ~ glu + ped, data = treino, kernel = "vanilladot")
+
+modelo_ksvm_van_v2 # Training error : 0.247059 
+
+
+modelo_ksvm_van_v3 <- ksvm(type ~ glu, data = treino, kernel = "vanilladot")
+
+modelo_ksvm_van_v3 # Training error : 0.235294
+
+
+
+
+##### Modelagem (utlizando kernel "rbfdot")
+
+
+modelo_ksvm_rbf_v1 <- ksvm(type ~ ., data = treino, kernel = "rbfdot")
+
+modelo_ksvm_rbf_v1 # Training error : 0.164706
+
+
+modelo_ksvm_rbf_v2 <- ksvm(type ~ glu + ped, data = treino, kernel = "rbfdot")
+
+modelo_ksvm_rbf_v2 # Training error : 0.194118
+
+
+modelo_ksvm_rbf_v3 <- ksvm(type ~ glu, data = treino, kernel = "rbfdot")
+
+modelo_ksvm_rbf_v3 # Training error : 0.223529 
 
 
 
 
 
+## Visualizando as perfomances dos modelos
+
+# -> Modelos Escolhidos: modelo_glm_v1 , modelo_glm_v2 e modelo_ksvm_rbf_v1
+
+predictions_modelo_glm_v1 <- predict(modelo_glm_v1, teste)
+predictions_modelo_glm_v1
+predictions_modelo_glm_v2 <- predict(modelo_glm_v2, teste)
+predictions_modelo_glm_v2
+predictions_modelo_ksvm_rbf_v1 <- predict(modelo_ksvm_rbf_v1, teste)  
+predictions_modelo_ksvm_rbf_v1
+
+
+## Criando a Matriz de confusão (foi necessário criar previsões de classe para modelos glm)
+
+previsoes_classe_modelo_glm_v1 <- ifelse(predictions_modelo_glm_v1 > 0.5, 'Yes', 'No')
+previsoes_classe_modelo_glm_v1
+previsoes_classe_modelo_glm_v2 <- ifelse(predictions_modelo_glm_v2 > 0.5, 'Yes', 'No')
+previsoes_classe_modelo_glm_v2
+
+predictions_modelo_ksvm_rbf_v1
+
+
+matriz_confusao_modelo_glm_v1 <- confusionMatrix(as.factor(previsoes_classe_modelo_glm_v1), teste$type)
+matriz_confusao_modelo_glm_v1  # Accuracy : 0.7667
+
+
+matriz_confusao_modelo_glm_v2 <- confusionMatrix(as.factor(previsoes_classe_modelo_glm_v2), teste$type)
+matriz_confusao_modelo_glm_v2  # Accuracy : 0.7
+
+
+matriz_confusao_modelo_ksvm_rbf_v1 <- confusionMatrix(as.factor(predictions_modelo_ksvm_rbf_v1), teste$type)
+matriz_confusao_modelo_ksvm_rbf_v1  # Accuracy : 0.6667
 
 
 
+## Criando um vetor de TRUE/FALSE indicando previsões CORRETAS/INCORRETAS
+
+vetor_modelo_glm_v1 <- previsoes_classe_modelo_glm_v1 == teste$type
+vetor_modelo_glm_v2 <- previsoes_classe_modelo_glm_v2 == teste$type
+vetor_modelo_ksvm_rbf_v1 <- predictions_modelo_ksvm_rbf_v1 == teste$type
 
 
 
+table(vetor_modelo_glm_v1)                          # FALSE 7    TRUE 23
+prop.table(table(vetor_modelo_glm_v1))           
+
+table(vetor_modelo_glm_v2)                          # FALSE 9    TRUE 21
+prop.table(table(vetor_modelo_glm_v2))           
+
+table(vetor_modelo_ksvm_rbf_v1)                     # FALSE 10   TRUE 20
+prop.table(table(vetor_modelo_ksvm_rbf_v1))           
 
 
-
-
-
+# - Essas proporções complementam as métricas da matriz de confusão e podem ser úteis para entender o desempenho dos modelos de
+#   uma maneira mais granular.
 
 
 
@@ -1311,27 +1446,11 @@ print(resultado)
 #   objeto é uma mina ou uma rocha com base nas características dos sinais. (feito)
 # - Pima.tr: contém informações sobre pacientes do sexo feminino de uma tribo indígena Pima no Arizona. O objetivo é classificar
 #   se um paciente desenvolverá diabetes dentro de cinco anos com base em variáveis de saúde, como idade, número de gravidezes,
-#   glicose, pressão sanguínea e outros.
-# - 
+#   glicose, pressão sanguínea e outros. (feito)
+
 
 # obtem lista com todos datasets
-
 data()
-
-
-
-
-install.packages("kernlab")
-
-library(kernlab)
-
-data(spam)
-
-
-
-
-
-
 
 
 
